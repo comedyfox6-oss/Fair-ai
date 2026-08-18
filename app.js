@@ -1,4 +1,3 @@
-
 /* =====================================================
    FAIR — APP.JS
    ===================================================== */
@@ -9,14 +8,20 @@ const DB_NAME = "fair_music_db";
 const DB_VERSION = 1;
 const TRACK_STORE = "tracks";
 
-/*
-   Cloudflare Worker
-*/
+/* =====================================================
+   CLOUDFLARE WORKER
+   ===================================================== */
+
 const AI_WORKER_URL =
   "https://summer-heart-97c3.comedyfox6.workers.dev/";
 
 
+/* =====================================================
+   DEFAULT DATA
+   ===================================================== */
+
 const defaultData = {
+
   user: {
     name: "",
     avatar: ""
@@ -25,11 +30,14 @@ const defaultData = {
   characters: [],
 
   chats: {}
+
 };
 
 
 let data = loadData();
+
 let currentCharacter = null;
+
 let newCharacterAvatar = "";
 
 let musicDBPromise = null;
@@ -70,6 +78,7 @@ function avatarPlaceholder(name = "?") {
 
   const letter =
     name.trim().charAt(0).toUpperCase() || "?";
+
 
   return (
     "data:image/svg+xml;charset=UTF-8," +
@@ -132,21 +141,30 @@ function loadData() {
         ...parsed,
 
         user: {
+
           ...defaultData.user,
+
           ...(parsed.user || {})
+
         },
 
         characters:
+
           Array.isArray(
             parsed.characters
           )
+
             ? parsed.characters
+
             : [],
 
         chats:
+
           parsed.chats &&
           typeof parsed.chats === "object"
+
             ? parsed.chats
+
             : {}
 
       };
@@ -186,6 +204,7 @@ function saveData() {
       error
     );
 
+
     alert(
       "Fair не смог сохранить данные. Возможно, браузеру не хватает места."
     );
@@ -223,6 +242,7 @@ function enterApp() {
     "hidden"
   );
 
+
   app.classList.remove(
     "hidden"
   );
@@ -241,10 +261,7 @@ $("guestLogin")?.addEventListener(
 );
 
 
-/*
-   Если старая кнопка Google
-   случайно осталась в HTML.
-*/
+/* На случай старой кнопки Google */
 
 $("googleLogin")?.addEventListener(
   "click",
@@ -265,29 +282,37 @@ $("googleLogin")?.addEventListener(
 function showPage(page) {
 
   const pages = [
+
     "homePage",
+
     "createPage",
+
     "tracksPage",
+
     "profilePage",
+
     "chatPage"
+
   ];
 
 
-  pages.forEach(id => {
+  pages.forEach(
+    id => {
 
-    const element =
-      $(id);
+      const element =
+        $(id);
 
 
-    if (element) {
+      if (element) {
 
-      element.classList.add(
-        "hidden"
-      );
+        element.classList.add(
+          "hidden"
+        );
+
+      }
 
     }
-
-  });
+  );
 
 
   const target =
@@ -308,43 +333,57 @@ function showPage(page) {
     .querySelectorAll(
       ".nav-button"
     )
-    .forEach(button => {
+    .forEach(
+      button => {
 
-      button.classList.toggle(
-        "active",
-        button.dataset.page === page
-      );
+        button.classList.toggle(
+          "active",
+          button.dataset.page === page
+        );
 
-    });
+      }
+    );
 
 
   if (page === "home") {
+
     renderHome();
+
   }
 
 
   if (page === "tracks") {
+
     renderTracks();
+
   }
 
 
   if (page === "profile") {
+
     renderProfile();
+
   }
 
 
   if (page === "chat") {
 
-    setTimeout(() => {
+    setTimeout(
+      () => {
 
-      const input =
-        $("chatInput");
+        const input =
+          $("chatInput");
 
-      if (input) {
-        input.focus();
-      }
 
-    }, 50);
+        if (input) {
+
+          input.focus();
+
+        }
+
+      },
+      50
+    );
 
   }
 
@@ -352,27 +391,29 @@ function showPage(page) {
 
 
 /* =====================================================
-   NAVIGATION BUTTONS
+   NAVIGATION
    ===================================================== */
 
 document
   .querySelectorAll(
     ".nav-button"
   )
-  .forEach(button => {
+  .forEach(
+    button => {
 
-    button.addEventListener(
-      "click",
-      () => {
+      button.addEventListener(
+        "click",
+        () => {
 
-        showPage(
-          button.dataset.page
-        );
+          showPage(
+            button.dataset.page
+          );
 
-      }
-    );
+        }
+      );
 
-  });
+    }
+  );
 
 
 $("createNav")?.addEventListener(
@@ -400,44 +441,43 @@ function openCreate() {
    BACK BUTTONS
    ===================================================== */
 
-/*
-   Все обычные data-page кнопки.
-*/
-
 document
   .querySelectorAll(
     "[data-page]"
   )
-  .forEach(button => {
+  .forEach(
+    button => {
 
-    if (
-      button.classList.contains(
-        "nav-button"
-      )
-    ) {
-      return;
-    }
+      if (
+        button.classList.contains(
+          "nav-button"
+        )
+      ) {
 
-
-    button.addEventListener(
-      "click",
-      event => {
-
-        event.preventDefault();
-
-        showPage(
-          button.dataset.page
-        );
+        return;
 
       }
-    );
-
-  });
 
 
-/*
-   Отдельная кнопка назад из чата.
-*/
+      button.addEventListener(
+        "click",
+        event => {
+
+          event.preventDefault();
+
+
+          showPage(
+            button.dataset.page
+          );
+
+        }
+      );
+
+    }
+  );
+
+
+/* Отдельная кнопка назад из чата */
 
 $("chatBack")?.addEventListener(
   "click",
@@ -445,7 +485,9 @@ $("chatBack")?.addEventListener(
 
     event.preventDefault();
 
+
     currentCharacter = null;
+
 
     showPage("home");
 
@@ -507,7 +549,9 @@ function renderCharacters() {
         );
 
 
-      card.type = "button";
+      card.type =
+        "button";
+
 
       card.className =
         "character-card";
@@ -641,9 +685,11 @@ function renderRecentChats() {
   if (!recent.length) {
 
     container.innerHTML = `
+
       <div class="empty-recent">
         Здесь появятся последние разговоры
       </div>
+
     `;
 
     return;
@@ -653,66 +699,70 @@ function renderRecentChats() {
 
   recent
     .slice(0, 10)
-    .forEach(item => {
+    .forEach(
+      item => {
 
-      const button =
-        document.createElement(
-          "button"
-        );
-
-
-      button.type = "button";
-
-      button.className =
-        "recent-card";
-
-
-      const avatar =
-        item.character.avatar ||
-        avatarPlaceholder(
-          item.character.name
-        );
-
-
-      button.innerHTML = `
-
-        <img
-          src="${avatar}"
-          alt=""
-        >
-
-        <span>
-          ${escapeHTML(
-            item.character.name
-          )}
-        </span>
-
-      `;
-
-
-      button.addEventListener(
-        "click",
-        () => {
-
-          openChat(
-            item.character.id
+        const button =
+          document.createElement(
+            "button"
           );
 
-        }
-      );
+
+        button.type =
+          "button";
 
 
-      container.appendChild(
-        button
-      );
+        button.className =
+          "recent-card";
 
-    });
+
+        const avatar =
+          item.character.avatar ||
+          avatarPlaceholder(
+            item.character.name
+          );
+
+
+        button.innerHTML = `
+
+          <img
+            src="${avatar}"
+            alt=""
+          >
+
+          <span>
+            ${escapeHTML(
+              item.character.name
+            )}
+          </span>
+
+        `;
+
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            openChat(
+              item.character.id
+            );
+
+          }
+        );
+
+
+        container.appendChild(
+          button
+        );
+
+      }
+    );
 
 }
 
 
 /* =====================================================
-   CREATE CHARACTER
+   CREATE CHARACTER — AVATAR
    ===================================================== */
 
 $("characterAvatar")?.addEventListener(
@@ -727,6 +777,11 @@ $("characterAvatar")?.addEventListener(
       return;
     }
 
+
+    /*
+       На iOS file.type иногда пустой.
+       Поэтому пустой MIME здесь не считаем ошибкой.
+    */
 
     if (
       file.type &&
@@ -748,41 +803,47 @@ $("characterAvatar")?.addEventListener(
       new FileReader();
 
 
-    reader.onload = () => {
+    reader.onload =
+      () => {
 
-      newCharacterAvatar =
-        reader.result;
-
-
-      const preview =
-        $("characterAvatarPreview");
-
-
-      const placeholder =
-        $("characterAvatarPlaceholder");
-
-
-      if (preview) {
-        preview.src =
+        newCharacterAvatar =
           reader.result;
-      }
 
 
-      if (placeholder) {
-        placeholder.style.display =
-          "none";
-      }
-
-    };
+        const preview =
+          $("characterAvatarPreview");
 
 
-    reader.onerror = () => {
+        const placeholder =
+          $("characterAvatarPlaceholder");
 
-      alert(
-        "Не удалось прочитать изображение."
-      );
 
-    };
+        if (preview) {
+
+          preview.src =
+            reader.result;
+
+        }
+
+
+        if (placeholder) {
+
+          placeholder.style.display =
+            "none";
+
+        }
+
+      };
+
+
+    reader.onerror =
+      () => {
+
+        alert(
+          "Не удалось прочитать изображение."
+        );
+
+      };
 
 
     reader.readAsDataURL(
@@ -792,6 +853,10 @@ $("characterAvatar")?.addEventListener(
   }
 );
 
+
+/* =====================================================
+   CREATE CHARACTER
+   ===================================================== */
 
 $("createCharacterButton")
   ?.addEventListener(
@@ -821,9 +886,11 @@ function createCharacter() {
 
   const character = {
 
-    id: makeId(),
+    id:
+      makeId(),
 
-    name,
+    name:
+      name,
 
     gender:
       $("characterGender")
@@ -890,23 +957,34 @@ function createCharacter() {
 function resetCreateForm() {
 
   [
+
     "characterName",
+
     "characterDescription",
+
     "characterPersonality",
+
     "characterGreeting",
+
     "userPersona",
+
     "characterInstructions"
-  ].forEach(id => {
 
-    const input =
-      $(id);
+  ].forEach(
+    id => {
+
+      const input =
+        $(id);
 
 
-    if (input) {
-      input.value = "";
+      if (input) {
+
+        input.value = "";
+
+      }
+
     }
-
-  });
+  );
 
 
   if ($("characterGender")) {
@@ -917,7 +995,8 @@ function resetCreateForm() {
   }
 
 
-  newCharacterAvatar = "";
+  newCharacterAvatar =
+    "";
 
 
   if ($("characterAvatarPreview")) {
@@ -992,18 +1071,74 @@ function openChat(characterId) {
         character.name
       );
 
+
     avatar.style.display =
       "block";
 
   }
 
 
+  /*
+     Статус больше НЕ "АФК".
+     Персонаж открыт в активном чате,
+     поэтому показываем "В сети".
+  */
+
+  const status =
+    $("chatStatus");
+
+
+  /*
+     Если в HTML пока нет id="chatStatus",
+     берём span из шапки чата.
+  */
+
+  if (status) {
+
+    status.textContent =
+      "В сети";
+
+  } else {
+
+    const chatCharacter =
+      document.querySelector(
+        ".chat-character"
+      );
+
+
+    const spans =
+      chatCharacter
+        ?.querySelectorAll(
+          "span"
+        );
+
+
+    if (
+      spans &&
+      spans.length
+    ) {
+
+      spans[
+        spans.length - 1
+      ].textContent =
+        "В сети";
+
+    }
+
+  }
+
+
   showPage("chat");
+
 
   renderChat();
 
 }
 
+
+/* =====================================================
+   RENDER CHAT
+   ===================================================== */
 
 function renderChat() {
 
@@ -1015,7 +1150,9 @@ function renderChat() {
     !container ||
     !currentCharacter
   ) {
+
     return;
+
   }
 
 
@@ -1029,8 +1166,8 @@ function renderChat() {
 
 
   /*
-     Приветствие показываем визуально,
-     но не сохраняем повторно.
+     Приветствие показывается только визуально.
+     В историю оно не записывается.
   */
 
   if (
@@ -1069,6 +1206,10 @@ function renderChat() {
 
 }
 
+
+/* =====================================================
+   ADD MESSAGE
+   ===================================================== */
 
 function addMessage(
   role,
@@ -1110,15 +1251,17 @@ function addMessage(
 
 
 /* =====================================================
-   AI CHAT — CLOUDFLARE WORKER
+   AI — CLOUDFLARE WORKER
    ===================================================== */
 
 async function askAI(text) {
 
   if (!currentCharacter) {
+
     throw new Error(
       "Персонаж не выбран."
     );
+
   }
 
 
@@ -1129,11 +1272,15 @@ async function askAI(text) {
 
 
   /*
-     Формат совместим с Worker:
-       character
-       userPersona
-       history
-       userMessage
+     Формат запроса:
+
+     character
+     userPersona
+     history
+     userMessage
+
+     Именно под этот формат
+     рассчитан Worker.
   */
 
   const payload = {
@@ -1161,7 +1308,8 @@ async function askAI(text) {
     },
 
     userPersona:
-      currentCharacter.userPersona || "",
+      currentCharacter.userPersona ||
+      "",
 
     history:
       history.map(
@@ -1182,61 +1330,130 @@ async function askAI(text) {
   };
 
 
-  const response =
-    await fetch(
-      AI_WORKER_URL,
-      {
-
-        method: "POST",
-
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-
-        body:
-          JSON.stringify(
-            payload
-          )
-
-      }
-    );
+  let response;
 
 
-  if (!response.ok) {
+  try {
 
-    const errorText =
-      await response.text()
-        .catch(() => "");
+    response =
+      await fetch(
+        AI_WORKER_URL,
+        {
 
+          method:
+            "POST",
+
+          headers: {
+
+            "Content-Type":
+              "application/json"
+
+          },
+
+          body:
+            JSON.stringify(
+              payload
+            )
+
+        }
+      );
+
+  } catch (networkError) {
 
     throw new Error(
-      `Worker ${response.status}: ${
-        errorText ||
-        "неизвестная ошибка"
-      }`
+      "Не удалось подключиться к Worker: " +
+      (
+        networkError?.message ||
+        String(networkError)
+      )
     );
 
   }
 
 
-  const result =
-    await response.json();
+  /*
+     Если Worker ответил HTTP-ошибкой,
+     вытаскиваем его настоящий текст.
+  */
+
+  if (!response.ok) {
+
+    let errorText = "";
+
+
+    try {
+
+      errorText =
+        await response.text();
+
+    } catch (_) {
+
+      errorText = "";
+
+    }
+
+
+    throw new Error(
+
+      `Worker HTTP ${response.status}` +
+
+      (
+        errorText
+          ? `: ${errorText}`
+          : ""
+      )
+
+    );
+
+  }
 
 
   /*
-     Поддерживаем несколько
-     распространённых форматов
-     ответа Worker.
+     Теперь пытаемся разобрать JSON.
+  */
+
+  let result;
+
+
+  try {
+
+    result =
+      await response.json();
+
+  } catch (jsonError) {
+
+    throw new Error(
+      "Worker вернул не JSON."
+    );
+
+  }
+
+
+  console.log(
+    "Fair Worker response:",
+    result
+  );
+
+
+  /*
+     Поддерживаем несколько возможных
+     форматов ответа.
   */
 
   const answer =
+
     result.reply ??
+
     result.response ??
+
     result.message ??
+
     result.content ??
+
     result.text ??
+
     result.output?.text ??
+
     result.choices?.[0]?.message?.content;
 
 
@@ -1245,13 +1462,8 @@ async function askAI(text) {
     !answer.trim()
   ) {
 
-    console.error(
-      "Неожиданный ответ Worker:",
-      result
-    );
-
     throw new Error(
-      "Worker вернул ответ без текста."
+      "Worker вернул JSON, но в нём не найден текст ответа."
     );
 
   }
@@ -1316,12 +1528,14 @@ async function sendMessage() {
   }
 
 
+  /*
+     Очищаем поле сразу,
+     чтобы пользователь не отправил
+     одно сообщение дважды.
+  */
+
   input.value = "";
 
-
-  /*
-     Сохраняем сообщение пользователя.
-  */
 
   if (
     !Array.isArray(
@@ -1338,15 +1552,22 @@ async function sendMessage() {
   }
 
 
+  /*
+     Сохраняем сообщение пользователя.
+  */
+
   data.chats[
     currentCharacter.id
   ].push({
 
-    role: "user",
+    role:
+      "user",
 
-    content: text,
+    content:
+      text,
 
-    time: Date.now()
+    time:
+      Date.now()
 
   });
 
@@ -1359,11 +1580,12 @@ async function sendMessage() {
 
   saveData();
 
+
   renderRecentChats();
 
 
   /*
-     Временное сообщение.
+     Индикатор ожидания.
   */
 
   const typing =
@@ -1386,10 +1608,19 @@ async function sendMessage() {
     );
 
 
-  $("chatMessages").scrollTop =
-    $("chatMessages")
-      .scrollHeight;
+  if ($("chatMessages")) {
 
+    $("chatMessages")
+      .scrollTop =
+      $("chatMessages")
+        .scrollHeight;
+
+  }
+
+
+  /*
+     Отправляем сообщение Worker.
+  */
 
   try {
 
@@ -1400,15 +1631,22 @@ async function sendMessage() {
     typing.remove();
 
 
+    /*
+       Сохраняем ответ бота.
+    */
+
     data.chats[
       currentCharacter.id
     ].push({
 
-      role: "bot",
+      role:
+        "bot",
 
-      content: answer,
+      content:
+        answer,
 
-      time: Date.now()
+      time:
+        Date.now()
 
     });
 
@@ -1420,6 +1658,7 @@ async function sendMessage() {
 
 
     saveData();
+
 
     renderRecentChats();
 
@@ -1434,29 +1673,23 @@ async function sendMessage() {
     typing.remove();
 
 
-    const errorMessage =
-      document.createElement(
-        "div"
-      );
+    /*
+       ВРЕМЕННАЯ ОТЛАДКА.
+       Показываем реальную ошибку
+       прямо в чате.
+    */
 
+    addMessage(
 
-    errorMessage.className =
-      "message bot ai-error";
+      "bot",
 
+      "⚠️ ОШИБКА (для отладки): " +
+      (
+        error?.message ||
+        String(error)
+      )
 
-    errorMessage.textContent =
-      "Не удалось получить ответ от персонажа.";
-
-
-    $("chatMessages")
-      ?.appendChild(
-        errorMessage
-      );
-
-
-    $("chatMessages").scrollTop =
-      $("chatMessages")
-        .scrollHeight;
+    );
 
   }
 
@@ -1509,8 +1742,10 @@ function renderProfile() {
     preview.src =
       data.user.avatar;
 
+
     preview.style.display =
       "block";
+
 
     placeholder.style.display =
       "none";
@@ -1522,8 +1757,10 @@ function renderProfile() {
 
     preview.src = "";
 
+
     preview.style.display =
       "none";
+
 
     placeholder.style.display =
       "";
@@ -1535,6 +1772,10 @@ function renderProfile() {
 
 }
 
+
+/* =====================================================
+   USER AVATAR
+   ===================================================== */
 
 $("userAvatarInput")
   ?.addEventListener(
@@ -1570,17 +1811,19 @@ $("userAvatarInput")
         new FileReader();
 
 
-      reader.onload = () => {
+      reader.onload =
+        () => {
 
-        data.user.avatar =
-          reader.result;
+          data.user.avatar =
+            reader.result;
 
 
-        saveData();
+          saveData();
 
-        renderProfile();
 
-      };
+          renderProfile();
+
+        };
 
 
       reader.readAsDataURL(
@@ -1590,6 +1833,10 @@ $("userAvatarInput")
     }
   );
 
+
+/* =====================================================
+   SAVE PROFILE
+   ===================================================== */
 
 $("saveProfile")
   ?.addEventListener(
@@ -1604,7 +1851,9 @@ $("saveProfile")
 
       saveData();
 
+
       updateUserAvatar();
+
 
       showPage("home");
 
@@ -1626,7 +1875,9 @@ function updateUserAvatar() {
     !image ||
     !placeholder
   ) {
+
     return;
+
   }
 
 
@@ -1635,8 +1886,10 @@ function updateUserAvatar() {
     image.src =
       data.user.avatar;
 
+
     image.style.display =
       "block";
+
 
     placeholder.style.display =
       "none";
@@ -1645,8 +1898,10 @@ function updateUserAvatar() {
 
     image.src = "";
 
+
     image.style.display =
       "none";
+
 
     placeholder.style.display =
       "inline";
@@ -1663,7 +1918,9 @@ function updateUserAvatar() {
 function openMusicDB() {
 
   if (musicDBPromise) {
+
     return musicDBPromise;
+
   }
 
 
@@ -1695,7 +1952,8 @@ function openMusicDB() {
               db.createObjectStore(
                 TRACK_STORE,
                 {
-                  keyPath: "id"
+                  keyPath:
+                    "id"
                 }
               );
 
@@ -1722,6 +1980,7 @@ function openMusicDB() {
               request.error
             );
 
+
             reject(
               request.error
             );
@@ -1736,6 +1995,10 @@ function openMusicDB() {
 
 }
 
+
+/* =====================================================
+   SAVE TRACK
+   ===================================================== */
 
 async function saveTrackToDB(
   track
@@ -1761,7 +2024,9 @@ async function saveTrackToDB(
         );
 
 
-      store.put(track);
+      store.put(
+        track
+      );
 
 
       transaction.oncomplete =
@@ -1782,6 +2047,10 @@ async function saveTrackToDB(
 
 }
 
+
+/* =====================================================
+   GET TRACKS
+   ===================================================== */
 
 async function getAllTracksFromDB() {
 
@@ -1845,6 +2114,10 @@ async function getAllTracksFromDB() {
 }
 
 
+/* =====================================================
+   DELETE TRACK
+   ===================================================== */
+
 async function deleteTrackFromDB(
   id
 ) {
@@ -1905,9 +2178,9 @@ async function handleMusicUpload(
 ) {
 
   const files =
-    [...(
-      event.target.files || []
-    )];
+    [
+      ...(event.target.files || [])
+    ];
 
 
   if (!files.length) {
@@ -1915,41 +2188,56 @@ async function handleMusicUpload(
   }
 
 
-  for (const file of files) {
+  for (
+    const file of files
+  ) {
 
     /*
-       ВАЖНО:
-       На iOS file.type иногда пустой.
-       Поэтому НЕ проверяем только MIME.
+       iOS может вернуть:
+       file.type === ""
+
+       Поэтому проверяем и MIME,
+       и расширение.
     */
 
-    const name =
+    const fileName =
       file.name || "";
 
 
     const extension =
-      name
+      fileName
         .split(".")
         .pop()
         .toLowerCase();
 
 
     const audioExtensions = [
+
       "mp3",
+
       "m4a",
+
       "wav",
+
       "aac",
+
       "flac",
+
       "ogg",
+
       "oga",
+
       "opus"
+
     ];
 
 
     const looksLikeAudio =
+
       file.type.startsWith(
         "audio/"
       ) ||
+
       audioExtensions.includes(
         extension
       );
@@ -1958,7 +2246,7 @@ async function handleMusicUpload(
     if (!looksLikeAudio) {
 
       alert(
-        `«${name}» не похоже на аудиофайл.`
+        `«${fileName}» не похоже на аудиофайл.`
       );
 
       continue;
@@ -1970,10 +2258,11 @@ async function handleMusicUpload(
 
       const track = {
 
-        id: makeId(),
+        id:
+          makeId(),
 
         name:
-          name ||
+          fileName ||
           "Без названия",
 
         type:
@@ -2003,7 +2292,7 @@ async function handleMusicUpload(
 
 
       alert(
-        `Не удалось добавить «${name}».`
+        `Не удалось добавить «${fileName}».`
       );
 
     }
@@ -2011,7 +2300,8 @@ async function handleMusicUpload(
   }
 
 
-  event.target.value = "";
+  event.target.value =
+    "";
 
 
   await renderTracks();
@@ -2020,7 +2310,7 @@ async function handleMusicUpload(
 
 
 /* =====================================================
-   MUSIC RENDER
+   RENDER TRACKS
    ===================================================== */
 
 async function renderTracks() {
@@ -2038,7 +2328,8 @@ async function renderTracks() {
   }
 
 
-  container.innerHTML = "";
+  container.innerHTML =
+    "";
 
 
   let tracks = [];
@@ -2194,6 +2485,7 @@ async function renderTracks() {
         name
       );
 
+
       info.appendChild(
         audio
       );
@@ -2228,11 +2520,13 @@ async function renderTracks() {
           event.stopPropagation();
 
 
-          if (
-            !confirm(
+          const confirmed =
+            confirm(
               `Удалить «${track.name}»?`
-            )
-          ) {
+            );
+
+
+          if (!confirmed) {
             return;
           }
 
@@ -2263,9 +2557,11 @@ async function renderTracks() {
         icon
       );
 
+
       item.appendChild(
         info
       );
+
 
       item.appendChild(
         deleteButton
@@ -2283,7 +2579,7 @@ async function renderTracks() {
 
 
 /* =====================================================
-   MORE
+   MORE BUTTONS
    ===================================================== */
 
 $("moreButton")?.addEventListener(
@@ -2332,8 +2628,11 @@ if (matrix) {
 
 
   let width = 0;
+
   let height = 0;
+
   let columns = 0;
+
   let drops = [];
 
 
@@ -2390,7 +2689,8 @@ if (matrix) {
     drops =
       Array.from(
         {
-          length: columns
+          length:
+            columns
         },
         () =>
           Math.random() * -100
