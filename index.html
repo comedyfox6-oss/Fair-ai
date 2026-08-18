@@ -1,308 +1,686 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Chat</title>
-  <link rel="stylesheet" href="style.css">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="theme-color"
+    content="#09070d"
+  >
+
+  <title>Fair</title>
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
 </head>
 
 <body>
-  <div class="app">
 
-    <aside class="sidebar">
-      <div class="sidebar-top">
-        <div class="logo">AI</div>
+  <!-- =====================================================
+       WELCOME / MATRIX
+       ===================================================== -->
 
-        <button id="newChat" class="plus" title="Новый чат">＋</button>
+  <section
+    id="welcome"
+    class="screen welcome-screen"
+  >
+
+    <canvas id="matrix"></canvas>
+
+    <div class="matrix-glow"></div>
+
+    <div class="welcome-content">
+
+      <div class="welcome-logo">
+        Fair
       </div>
 
-      <div id="chatList" class="chat-list"></div>
-    </aside>
+      <p class="welcome-subtitle">
+        your characters. your world.
+      </p>
 
-    <main class="chat">
+      <div class="welcome-buttons">
 
-      <header class="chat-header">
-        <div>
-          <div id="chatTitle">Новое чудо</div>
-          <div id="chatStatus">готов к общению</div>
+        <button
+          id="googleLogin"
+          class="welcome-main-button"
+        >
+          Продолжить с Google
+        </button>
+
+        <button
+          id="guestLogin"
+          class="welcome-secondary-button"
+        >
+          Войти без аккаунта
+        </button>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
+       APPLICATION
+       ===================================================== -->
+
+  <section
+    id="app"
+    class="app hidden"
+  >
+
+    <!-- TOP BAR -->
+
+    <header class="topbar">
+
+      <div class="brand">
+        Fair
+      </div>
+
+      <div class="topbar-right">
+
+        <button
+          id="profileButton"
+          class="user-avatar-button"
+        >
+
+          <img
+            id="userAvatar"
+            src=""
+            alt=""
+          >
+
+          <span id="defaultUserAvatar">
+            👤
+          </span>
+
+        </button>
+
+        <button
+          id="moreButton"
+          class="more-button"
+        >
+          •••
+        </button>
+
+      </div>
+
+    </header>
+
+
+    <!-- =================================================
+         HOME
+         ================================================= -->
+
+    <main
+      id="homePage"
+      class="page"
+    >
+
+      <section>
+
+        <div class="section-heading">
+
+          <h2>
+            Recent chats
+          </h2>
+
         </div>
 
-        <button id="settings" class="icon-button">⚙</button>
-      </header>
+        <div
+          id="recentChats"
+          class="recent-chats"
+        ></div>
 
-      <div id="messages" class="messages">
-        <div class="empty">
-          <div class="empty-symbol">✦</div>
-          <div class="empty-title">Ну привет.</div>
-          <div class="empty-text">
-            Нажми ＋ и создай себе чудо.
+      </section>
+
+
+      <section class="characters-section">
+
+        <div class="section-heading">
+
+          <h2>
+            Characters
+          </h2>
+
+        </div>
+
+
+        <div
+          id="charactersGrid"
+          class="characters-grid"
+        ></div>
+
+
+        <div
+          id="emptyCharacters"
+          class="empty-state"
+        >
+
+          <div class="empty-plus">
+            ＋
           </div>
+
+          <p>
+            Здесь пока пусто
+          </p>
+
+          <button
+            id="emptyCreateButton"
+            class="small-button"
+          >
+            Создать персонажа
+          </button>
+
         </div>
+
+      </section>
+
+    </main>
+
+
+    <!-- =================================================
+         CREATE
+         ================================================= -->
+
+    <main
+      id="createPage"
+      class="page hidden"
+    >
+
+      <div class="page-heading">
+
+        <button
+          class="back-button"
+          data-page="home"
+        >
+          ←
+        </button>
+
+        <div>
+
+          <h1>
+            Создать персонажа
+          </h1>
+
+          <p>
+            Сделай его своим.
+          </p>
+
+        </div>
+
       </div>
 
-      <div class="input-area">
-        <textarea
-          id="message"
-          rows="1"
-          placeholder="Напиши что-нибудь..."
-        ></textarea>
 
-        <button id="send" class="send">➤</button>
+      <div class="create-form">
+
+
+        <!-- AVATAR -->
+
+        <div class="avatar-picker">
+
+          <label
+            for="characterAvatar"
+            class="character-avatar-picker"
+          >
+
+            <img
+              id="characterAvatarPreview"
+              src=""
+              alt=""
+            >
+
+            <span
+              id="characterAvatarPlaceholder"
+            >
+              ＋
+            </span>
+
+          </label>
+
+          <input
+            id="characterAvatar"
+            type="file"
+            accept="image/*"
+            hidden
+          >
+
+          <span>
+            Добавить аватар
+          </span>
+
+        </div>
+
+
+        <!-- NAME -->
+
+        <label>
+
+          Имя
+
+          <input
+            id="characterName"
+            type="text"
+            placeholder="Например, Дэмиан"
+          >
+
+        </label>
+
+
+        <!-- GENDER -->
+
+        <label>
+
+          Пол
+
+          <select id="characterGender">
+
+            <option value="">
+              Не указан
+            </option>
+
+            <option value="male">
+              Мужской
+            </option>
+
+            <option value="female">
+              Женский
+            </option>
+
+            <option value="other">
+              Другой
+            </option>
+
+          </select>
+
+        </label>
+
+
+        <!-- DESCRIPTION -->
+
+        <label>
+
+          Описание
+
+          <textarea
+            id="characterDescription"
+            placeholder="Кто этот персонаж?"
+          ></textarea>
+
+        </label>
+
+
+        <!-- PERSONALITY -->
+
+        <label>
+
+          Характер
+
+          <textarea
+            id="characterPersonality"
+            placeholder="Как он говорит, думает и ведёт себя?"
+          ></textarea>
+
+        </label>
+
+
+        <!-- GREETING -->
+
+        <label>
+
+          Приветственное сообщение
+
+          <textarea
+            id="characterGreeting"
+            placeholder="Что персонаж скажет первым?"
+          ></textarea>
+
+        </label>
+
+
+        <!-- USER PERSONA -->
+
+        <label>
+
+          Твоя persona
+
+          <textarea
+            id="userPersona"
+            placeholder="Кем ты являешься для этого персонажа?"
+          ></textarea>
+
+        </label>
+
+
+        <!-- INSTRUCTIONS -->
+
+        <label>
+
+          Дополнительные сведения
+
+          <textarea
+            id="characterInstructions"
+            placeholder="Всё остальное, что персонажу нужно знать..."
+          ></textarea>
+
+        </label>
+
+
+        <button
+          id="createCharacterButton"
+          class="primary-button"
+        >
+          Создать персонажа
+        </button>
+
       </div>
 
     </main>
-  </div>
 
-  <script>
-    const chats = JSON.parse(
-      localStorage.getItem("ai_chats") || "[]"
-    );
 
-    let currentChat = null;
+    <!-- =================================================
+         TRACKS
+         ================================================= -->
 
-    const chatList = document.getElementById("chatList");
-    const messages = document.getElementById("messages");
-    const messageInput = document.getElementById("message");
-    const sendButton = document.getElementById("send");
-    const newChatButton = document.getElementById("newChat");
+    <main
+      id="tracksPage"
+      class="page hidden"
+    >
 
-    function saveChats() {
-      localStorage.setItem(
-        "ai_chats",
-        JSON.stringify(chats)
-      );
-    }
+      <div class="page-heading">
 
-    function createChat() {
-      const chat = {
-        id: crypto.randomUUID(),
+        <div>
 
-        // Пока пусто.
-        // Потом сюда можно добавить имя/характер.
-        name: "Новое чудо",
+          <h1>
+            Tracks
+          </h1>
 
-        system:
-          "Ты — живой собеседник. Отвечай естественно, сохраняй контекст разговора и не будь душнилой.",
+          <p>
+            Твоя музыка.
+          </p>
 
-        messages: []
-      };
+        </div>
 
-      chats.unshift(chat);
-      currentChat = chat;
+      </div>
 
-      saveChats();
-      renderChatList();
-      renderChat();
 
-      messageInput.focus();
-    }
+      <div class="music-actions">
 
-    function renderChatList() {
-      chatList.innerHTML = "";
+        <label
+          for="musicUpload"
+          class="music-upload-button"
+        >
+          ＋ Добавить музыку
+        </label>
 
-      chats.forEach(chat => {
-        const item = document.createElement("button");
+        <input
+          id="musicUpload"
+          type="file"
+          accept="audio/*"
+          multiple
+          hidden
+        >
 
-        item.className =
-          "chat-item " +
-          (currentChat?.id === chat.id ? "active" : "");
+      </div>
 
-        item.textContent = chat.name;
 
-        item.onclick = () => {
-          currentChat = chat;
-          renderChatList();
-          renderChat();
-        };
+      <div
+        id="tracksList"
+        class="tracks-list"
+      ></div>
 
-        chatList.appendChild(item);
-      });
-    }
 
-    function renderChat() {
-      if (!currentChat) {
-        messages.innerHTML = `
-          <div class="empty">
-            <div class="empty-symbol">✦</div>
-            <div class="empty-title">Ну привет.</div>
-            <div class="empty-text">
-              Нажми ＋ и создай себе чудо.
-            </div>
+      <div
+        id="emptyTracks"
+        class="empty-state"
+      >
+
+        <div class="empty-plus">
+          ♪
+        </div>
+
+        <p>
+          Здесь пока нет музыки
+        </p>
+
+      </div>
+
+    </main>
+
+
+    <!-- =================================================
+         PROFILE
+         ================================================= -->
+
+    <main
+      id="profilePage"
+      class="page hidden"
+    >
+
+      <div class="page-heading">
+
+        <button
+          class="back-button"
+          data-page="home"
+        >
+          ←
+        </button>
+
+        <div>
+
+          <h1>
+            Профиль
+          </h1>
+
+          <p>
+            Профиль и настройки
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="profile-card">
+
+        <label
+          for="userAvatarInput"
+          class="profile-avatar"
+        >
+
+          <img
+            id="profileAvatarPreview"
+            src=""
+            alt=""
+          >
+
+          <span
+            id="profileAvatarPlaceholder"
+          >
+            👤
+          </span>
+
+        </label>
+
+        <input
+          id="userAvatarInput"
+          type="file"
+          accept="image/*"
+          hidden
+        >
+
+
+        <label>
+
+          Имя
+
+          <input
+            id="userName"
+            type="text"
+            placeholder="Твоё имя"
+          >
+
+        </label>
+
+
+        <button
+          id="saveProfile"
+          class="primary-button"
+        >
+          Сохранить
+        </button>
+
+      </div>
+
+    </main>
+
+
+    <!-- =================================================
+         CHAT
+         ================================================= -->
+
+    <main
+      id="chatPage"
+      class="chat-page hidden"
+    >
+
+      <header class="chat-header">
+
+        <button
+          id="chatBack"
+          class="back-button"
+        >
+          ←
+        </button>
+
+
+        <div class="chat-character">
+
+          <img
+            id="chatAvatar"
+            src=""
+            alt=""
+          >
+
+          <div>
+
+            <strong
+              id="chatName"
+            ></strong>
+
+            <span>
+              АФК
+            </span>
+
           </div>
-        `;
 
-        return;
-      }
+        </div>
 
-      document.getElementById("chatTitle").textContent =
-        currentChat.name;
 
-      messages.innerHTML = "";
+        <button
+          id="chatMore"
+          class="more-button"
+        >
+          •••
+        </button>
 
-      if (currentChat.messages.length === 0) {
-        messages.innerHTML = `
-          <div class="empty">
-            <div class="empty-symbol">✦</div>
-            <div class="empty-title">Чудо создано.</div>
-            <div class="empty-text">
-              Можешь начинать.
-            </div>
-          </div>
-        `;
+      </header>
 
-        return;
-      }
 
-      currentChat.messages.forEach(msg => {
-        addMessageToScreen(msg.role, msg.content);
-      });
+      <div
+        id="chatMessages"
+        class="chat-messages"
+      ></div>
 
-      scrollDown();
-    }
 
-    function addMessageToScreen(role, text) {
-      const bubble = document.createElement("div");
+      <div class="chat-input-area">
 
-      bubble.className =
-        "message " +
-        (role === "user" ? "user" : "assistant");
+        <textarea
+          id="chatInput"
+          rows="1"
+          placeholder="Напиши сообщение..."
+        ></textarea>
 
-      bubble.textContent = text;
+        <button
+          id="sendMessage"
+          class="send-button"
+        >
+          ↑
+        </button>
 
-      messages.appendChild(bubble);
-    }
+      </div>
 
-    function scrollDown() {
-      messages.scrollTop = messages.scrollHeight;
-    }
+    </main>
 
-    async function sendMessage() {
-      if (!currentChat) {
-        createChat();
-      }
 
-      const text = messageInput.value.trim();
+    <!-- =================================================
+         BOTTOM NAV
+         ================================================= -->
 
-      if (!text) return;
+    <nav class="bottom-nav">
 
-      messageInput.value = "";
+      <button
+        class="nav-button active"
+        data-page="home"
+      >
 
-      currentChat.messages.push({
-        role: "user",
-        content: text
-      });
+        <span>
+          ◉
+        </span>
 
-      addMessageToScreen("user", text);
-      scrollDown();
-      saveChats();
+        <small>
+          Chats
+        </small>
 
-      sendButton.disabled = true;
-      document.getElementById("chatStatus").textContent =
-        "думает...";
+      </button>
 
-      try {
-        /*
-          Здесь находится единственное место,
-          где нам потом понадобится настоящий мотор.
 
-          Backend должен принять:
-          {
-            chatId,
-            system,
-            messages
-          }
+      <button
+        id="createNav"
+        class="create-nav"
+      >
 
-          и вернуть:
-          {
-            reply: "..."
-          }
-        */
+        ＋
 
-        const response = await fetch(
-          "https://ТВОЙ-WORKER-URL/chat",
-          {
-            method: "POST",
+        <small>
+          Create
+        </small>
 
-            headers: {
-              "Content-Type": "application/json"
-            },
+      </button>
 
-            body: JSON.stringify({
-              chatId: currentChat.id,
 
-              system: currentChat.system,
+      <button
+        class="nav-button"
+        data-page="tracks"
+      >
 
-              messages: currentChat.messages
-            })
-          }
-        );
+        <span>
+          ♪
+        </span>
 
-        if (!response.ok) {
-          throw new Error("Server error");
-        }
+        <small>
+          Tracks
+        </small>
 
-        const data = await response.json();
+      </button>
 
-        const reply =
-          data.reply || "[мотор промолчал]";
+    </nav>
 
-        currentChat.messages.push({
-          role: "assistant",
-          content: reply
-        });
+  </section>
 
-        addMessageToScreen("assistant", reply);
 
-        saveChats();
-        scrollDown();
+  <script src="app.js"></script>
 
-      } catch (error) {
-
-        addMessageToScreen(
-          "assistant",
-          "Что-то сломалось. Мотор не отвечает."
-        );
-
-        console.error(error);
-
-      } finally {
-
-        sendButton.disabled = false;
-
-        document.getElementById("chatStatus").textContent =
-          "готов к общению";
-
-        messageInput.focus();
-      }
-    }
-
-    newChatButton.onclick = createChat;
-
-    sendButton.onclick = sendMessage;
-
-    messageInput.addEventListener(
-      "keydown",
-      event => {
-
-        if (
-          event.key === "Enter" &&
-          !event.shiftKey
-        ) {
-          event.preventDefault();
-          sendMessage();
-        }
-
-      }
-    );
-
-    renderChatList();
-
-    if (chats.length > 0) {
-      currentChat = chats[0];
-      renderChatList();
-      renderChat();
-    }
-  </script>
 </body>
+
 </html>
