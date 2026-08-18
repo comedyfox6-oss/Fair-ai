@@ -3,6 +3,7 @@
    ===================================================== */
 
 const STORAGE_KEY = "fair_data_v1";
+const THEME_KEY = "fair_theme_v1";
 
 const defaultData = {
   user: {
@@ -19,6 +20,7 @@ const defaultData = {
 
 let data = loadData();
 let currentCharacter = null;
+let newCharacterAvatar = "";
 
 
 /* =====================================================
@@ -30,9 +32,18 @@ function loadData() {
     const saved = localStorage.getItem(STORAGE_KEY);
 
     if (saved) {
+      const parsed = JSON.parse(saved);
+
       return {
-        ...defaultData,
-        ...JSON.parse(saved)
+        ...structuredClone(defaultData),
+        ...parsed,
+        user: {
+          ...defaultData.user,
+          ...(parsed.user || {})
+        },
+        characters: parsed.characters || [],
+        chats: parsed.chats || {},
+        tracks: parsed.tracks || []
       };
     }
   } catch (error) {
@@ -44,10 +55,18 @@ function loadData() {
 
 
 function saveData() {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(data)
-  );
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(data)
+    );
+  } catch (error) {
+    console.error("Fair save error:", error);
+
+    alert(
+      "Fair: не удалось сохранить данные. Возможно, браузер переполнен."
+    );
+  }
 }
 
 
@@ -104,6 +123,18 @@ function avatarPlaceholder(name = "?") {
 }
 
 
+function escapeHTML(value) {
+
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+}
+
+
 /* =====================================================
    ENTER APP
    ===================================================== */
@@ -119,23 +150,17 @@ function enterApp() {
   }
 
   welcome.classList.add("hidden");
-
   app.classList.remove("hidden");
 
+  applyTheme();
   showPage("home");
-
-  renderHome();
 }
 
 
-const guestButton = $("guestLogin");
-
-if (guestButton) {
-  guestButton.addEventListener(
-    "click",
-    enterApp
-  );
-}
+$("guestLogin")?.addEventListener(
+  "click",
+  enterApp
+);
 
 
 /* =====================================================
@@ -170,6 +195,38 @@ function showPage(page) {
   }
 
 
+  /*
+    Во время чата нижняя навигация убирается,
+    чтобы она не закрывала поле ввода.
+  */
+
+  const bottomNav =
+    document.querySelector(".bottom-nav");
+
+  if (bottomNav) {
+    bottomNav.classList.toggle(
+      "chat-mode",
+      page === "chat"
+    );
+  }
+
+
+  /*
+    Верхняя часть приложения тоже не должна
+    мешать полноценному экрану чата.
+  */
+
+  const topbar =
+    document.querySelector(".topbar");
+
+  if (topbar) {
+    topbar.classList.toggle(
+      "chat-mode",
+      page === "chat"
+    );
+  }
+
+
   document
     .querySelectorAll(".nav-button")
     .forEach(button => {
@@ -193,10 +250,19 @@ function showPage(page) {
   if (page === "profile") {
     renderProfile();
   }
+
+  if (page === "chat") {
+    setTimeout(() => {
+      $("chatInput")?.focus();
+    }, 50);
+  }
+
 }
 
 
-/* Нижняя навигация */
+/* =====================================================
+   BOTTOM NAV
+   ===================================================== */
 
 document
   .querySelectorAll(".nav-button")
@@ -216,7 +282,9 @@ document
   });
 
 
-/* Create */
+/* =====================================================
+   CREATE
+   ===================================================== */
 
 $("createNav")?.addEventListener(
   "click",
@@ -238,7 +306,9 @@ function openCreate() {
 }
 
 
-/* Назад */
+/* =====================================================
+   BACK BUTTONS
+   ===================================================== */
 
 document
   .querySelectorAll("[data-page]")
@@ -262,6 +332,18 @@ document
     );
 
   });
+
+
+$("chatBack")?.addEventListener(
+  "click",
+  () => {
+
+    currentCharacter = null;
+
+    showPage("home");
+
+  }
+);
 
 
 /* =====================================================
@@ -290,7 +372,6 @@ function renderCharacters() {
   }
 
   grid.innerHTML = "";
-
 
   const empty = $("emptyCharacters");
 
@@ -371,7 +452,6 @@ function renderRecentChats() {
   }
 
   container.innerHTML = "";
-
 
   const recent = [];
 
@@ -483,9 +563,6 @@ function renderRecentChats() {
    CREATE CHARACTER
    ===================================================== */
 
-let newCharacterAvatar = "";
-
-
 $("characterAvatar")?.addEventListener(
   "change",
   event => {
@@ -494,6 +571,12 @@ $("characterAvatar")?.addEventListener(
       event.target.files[0];
 
     if (!file) {
+      return;
+    }
+
+
+    if (!file.type.startsWith("image/")) {
+      alert("Нужна именно картинка.");
       return;
     }
 
@@ -635,16 +718,12 @@ function resetCreateForm() {
 
   $("characterGender").value = "";
 
-
   newCharacterAvatar = "";
-
 
   $("characterAvatarPreview").src = "";
 
-
   $("characterAvatarPlaceholder")
     .style.display = "";
-
 
   $("characterAvatar").value = "";
 
@@ -672,17 +751,43 @@ function openChat(characterId) {
     character;
 
 
-  $("chatName").textContent =
-    character.name;
+  /*
+    Аватар ставим ДО открытия страницы.
+    Если его нет — создаём красивый placeholder.
+  */
 
-
-  $("chatAvatar").src =
+  const avatar =
     character.avatar ||
     avatarPlaceholder(character.name);
 
 
-  showPage("chat");
+  const chatName =
+    $("chatName");
 
+  const chatAvatar =
+    $("chatAvatar");
+
+
+  if (chatName) {
+    chatName.textContent =
+      character.name;
+  }
+
+
+  if (chatAvatar) {
+
+    chatAvatar.src = avatar;
+
+    chatAvatar.alt =
+      character.name;
+
+    chatAvatar.style.display =
+      "block";
+
+  }
+
+
+  showPage("chat");
 
   renderChat();
 
@@ -691,8 +796,18 @@ function openChat(characterId) {
 
 function renderChat() {
 
+  if (!currentCharacter) {
+    return;
+  }
+
+
   const container =
     $("chatMessages");
+
+
+  if (!container) {
+    return;
+  }
 
 
   container.innerHTML = "";
@@ -703,27 +818,54 @@ function renderChat() {
     [];
 
 
+  /*
+    Если чат пустой, показываем приветствие,
+    но теперь СРАЗУ сохраняем его в историю.
+  */
+
   if (
     messages.length === 0 &&
     currentCharacter.greeting
   ) {
 
-    addMessage(
-      "bot",
-      currentCharacter.greeting
-    );
+    const greeting =
+      currentCharacter.greeting;
 
-    return;
+
+    data.chats[currentCharacter.id] = [
+
+      {
+        role: "bot",
+        content: greeting,
+        time: Date.now()
+      }
+
+    ];
+
+
+    saveData();
 
   }
 
 
-  messages.forEach(message => {
+  const history =
+    data.chats[currentCharacter.id] || [];
+
+
+  history.forEach(message => {
 
     addMessage(
       message.role,
       message.content
     );
+
+  });
+
+
+  requestAnimationFrame(() => {
+
+    container.scrollTop =
+      container.scrollHeight;
 
   });
 
@@ -734,6 +876,15 @@ function addMessage(
   role,
   text
 ) {
+
+  const container =
+    $("chatMessages");
+
+
+  if (!container) {
+    return;
+  }
+
 
   const message =
     document.createElement("div");
@@ -747,12 +898,15 @@ function addMessage(
     text;
 
 
-  $("chatMessages")
-    .appendChild(message);
+  container.appendChild(message);
 
 
-  $("chatMessages").scrollTop =
-    $("chatMessages").scrollHeight;
+  requestAnimationFrame(() => {
+
+    container.scrollTop =
+      container.scrollHeight;
+
+  });
 
 }
 
@@ -797,6 +951,11 @@ function sendMessage() {
     $("chatInput");
 
 
+  if (!input) {
+    return;
+  }
+
+
   const text =
     input.value.trim();
 
@@ -822,9 +981,7 @@ function sendMessage() {
   }
 
 
-  data.chats[
-    currentCharacter.id
-  ].push({
+  const message = {
 
     role: "user",
 
@@ -832,7 +989,12 @@ function sendMessage() {
 
     time: Date.now()
 
-  });
+  };
+
+
+  data.chats[
+    currentCharacter.id
+  ].push(message);
 
 
   addMessage(
@@ -861,8 +1023,13 @@ $("profileButton")?.addEventListener(
 
 function renderProfile() {
 
-  $("userName").value =
-    data.user.name || "";
+  const nameInput =
+    $("userName");
+
+  if (nameInput) {
+    nameInput.value =
+      data.user.name || "";
+  }
 
 
   if (data.user.avatar) {
@@ -911,9 +1078,9 @@ $("userAvatarInput")
           reader.result;
 
 
-        renderProfile();
-
         saveData();
+
+        renderProfile();
 
       };
 
@@ -947,25 +1114,35 @@ $("saveProfile")
 
 function updateUserAvatar() {
 
-  if (
-    data.user.avatar
-  ) {
+  const avatar =
+    $("userAvatar");
 
-    $("userAvatar").src =
+  const placeholder =
+    $("defaultUserAvatar");
+
+
+  if (!avatar || !placeholder) {
+    return;
+  }
+
+
+  if (data.user.avatar) {
+
+    avatar.src =
       data.user.avatar;
 
-    $("userAvatar").style.display =
+    avatar.style.display =
       "block";
 
-    $("defaultUserAvatar").style.display =
+    placeholder.style.display =
       "none";
 
   } else {
 
-    $("userAvatar").style.display =
+    avatar.style.display =
       "none";
 
-    $("defaultUserAvatar").style.display =
+    placeholder.style.display =
       "inline";
 
   }
@@ -991,6 +1168,11 @@ function handleMusicUpload(event) {
 
 
   files.forEach(file => {
+
+    if (!file.type.startsWith("audio/")) {
+      return;
+    }
+
 
     const reader =
       new FileReader();
@@ -1032,11 +1214,16 @@ function renderTracks() {
     $("tracksList");
 
 
+  if (!container) {
+    return;
+  }
+
+
   container.innerHTML = "";
 
 
   $("emptyTracks")
-    .classList.toggle(
+    ?.classList.toggle(
       "hidden",
       data.tracks.length > 0
     );
@@ -1083,6 +1270,170 @@ function renderTracks() {
 
 
 /* =====================================================
+   THEME
+   ===================================================== */
+
+/*
+  Тема хранится отдельно от персонажей.
+  Сейчас есть:
+  - Fair Dark
+  - Fair Pink
+
+  Переключение происходит через •••.
+*/
+
+
+function getTheme() {
+
+  return (
+    localStorage.getItem(THEME_KEY) ||
+    "dark"
+  );
+
+}
+
+
+function applyTheme() {
+
+  const theme =
+    getTheme();
+
+
+  document.documentElement
+    .dataset.theme =
+    theme;
+
+
+  /*
+    Эти стили добавляются JS-ом,
+    поэтому не требуется отдельный
+    theme.css.
+  */
+
+  let themeStyle =
+    $("fairThemeStyle");
+
+
+  if (!themeStyle) {
+
+    themeStyle =
+      document.createElement("style");
+
+    themeStyle.id =
+      "fairThemeStyle";
+
+    document.head.appendChild(
+      themeStyle
+    );
+
+  }
+
+
+  if (theme === "pink") {
+
+    themeStyle.textContent = `
+
+      :root[data-theme="pink"] {
+        background: #100811;
+        color: #fff7fc;
+      }
+
+      :root[data-theme="pink"] body {
+        background: #100811;
+      }
+
+      :root[data-theme="pink"] .app {
+        background:
+          radial-gradient(
+            circle at top right,
+            rgba(255, 100, 205, 0.12),
+            transparent 38%
+          ),
+          #100811;
+      }
+
+      :root[data-theme="pink"] .topbar {
+        background:
+          rgba(16, 8, 17, 0.90);
+        border-bottom-color: #332033;
+      }
+
+      :root[data-theme="pink"] .bottom-nav {
+        background:
+          rgba(16, 8, 17, 0.94);
+        border-top-color: #332033;
+      }
+
+      :root[data-theme="pink"] .character-card:hover {
+        filter:
+          drop-shadow(
+            0 5px 18px
+            rgba(255, 100, 205, 0.14)
+          );
+      }
+
+      :root[data-theme="pink"] .message.bot {
+        background: #211521;
+      }
+
+      :root[data-theme="pink"] .chat-header {
+        background:
+          rgba(16, 8, 17, 0.90);
+        border-bottom-color: #332033;
+      }
+
+      :root[data-theme="pink"] .chat-input-area {
+        background:
+          rgba(16, 8, 17, 0.96);
+      }
+
+      :root[data-theme="pink"] .chat-input-area textarea {
+        background: #180d19;
+        border-color: #3a2438;
+      }
+
+    `;
+
+  } else {
+
+    themeStyle.textContent = "";
+
+  }
+
+}
+
+
+function toggleTheme() {
+
+  const current =
+    getTheme();
+
+
+  const next =
+    current === "dark"
+      ? "pink"
+      : "dark";
+
+
+  localStorage.setItem(
+    THEME_KEY,
+    next
+  );
+
+
+  applyTheme();
+
+
+  alert(
+    next === "pink"
+      ? "Тема Fair Pink включена 🌸"
+      : "Тёмная тема Fair включена."
+  );
+
+}
+
+
+/* =====================================================
    MORE
    ===================================================== */
 
@@ -1090,9 +1441,7 @@ $("moreButton")?.addEventListener(
   "click",
   () => {
 
-    alert(
-      "Настройки Fair появятся здесь."
-    );
+    toggleTheme();
 
   }
 );
@@ -1102,8 +1451,14 @@ $("chatMore")?.addEventListener(
   "click",
   () => {
 
+    if (!currentCharacter) {
+      return;
+    }
+
+
     alert(
-      "Настройки персонажа появятся здесь."
+      `Персонаж: ${currentCharacter.name}\n\n` +
+      `Здесь позже будут настройки персонажа.`
     );
 
   }
@@ -1111,19 +1466,98 @@ $("chatMore")?.addEventListener(
 
 
 /* =====================================================
-   HTML ESCAPE
+   CHAT UI FIX
    ===================================================== */
 
-function escapeHTML(value) {
+/*
+  CSS дополнительно страхуем прямо из JS.
 
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  Это решает ситуацию, когда:
+  - поле ввода исчезает;
+  - нижняя навигация закрывает его;
+  - чат занимает неправильную высоту;
+  - аватар получает нулевой размер.
+*/
 
-}
+(function installChatFix() {
+
+  const style =
+    document.createElement("style");
+
+  style.id =
+    "fairChatFix";
+
+  style.textContent = `
+
+    .chat-page {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100dvh !important;
+      min-height: 100dvh !important;
+      z-index: 100 !important;
+      background: #08070c;
+    }
+
+    .chat-page.hidden {
+      display: none !important;
+    }
+
+    .chat-header {
+      flex: 0 0 66px !important;
+      min-height: 66px !important;
+      position: relative;
+      z-index: 2;
+    }
+
+    .chat-character img {
+      display: block !important;
+      width: 41px !important;
+      height: 41px !important;
+      min-width: 41px !important;
+      min-height: 41px !important;
+      flex: 0 0 41px !important;
+    }
+
+    .chat-messages {
+      min-height: 0 !important;
+      flex: 1 1 auto !important;
+      overflow-y: auto !important;
+    }
+
+    .chat-input-area {
+      position: relative !important;
+      z-index: 5 !important;
+      flex: 0 0 auto !important;
+      min-height: 66px !important;
+    }
+
+    .chat-input-area textarea {
+      min-height: 46px !important;
+      display: block !important;
+    }
+
+    .send-button {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    .bottom-nav.chat-mode {
+      display: none !important;
+    }
+
+    .topbar.chat-mode {
+      display: none !important;
+    }
+
+  `;
+
+  document.head.appendChild(style);
+
+})();
 
 
 /* =====================================================
@@ -1204,8 +1638,7 @@ if (matrix) {
           length: columns
         },
         () =>
-          Math.random() *
-          -100
+          Math.random() * -100
       );
 
   }
@@ -1221,13 +1654,6 @@ if (matrix) {
 
 
   function drawMatrix() {
-
-    /*
-      Большой alpha здесь специально:
-      символы медленно растворяются,
-      поэтому получается плавное движение,
-      а не бешеная Matrix из 1999 года.
-    */
 
     ctx.fillStyle =
       "rgba(6, 5, 9, 0.055)";
@@ -1267,10 +1693,6 @@ if (matrix) {
         ];
 
 
-      /*
-        Бело-розовая матрица.
-      */
-
       const brightness =
         Math.random();
 
@@ -1307,16 +1729,11 @@ if (matrix) {
 
 
       /*
-        Медленно опускаем символы.
+        Медленное движение.
       */
 
       drops[i] += 0.32;
 
-
-      /*
-        Возвращаем колонку наверх
-        после выхода за экран.
-      */
 
       if (
         y > height &&
@@ -1346,5 +1763,7 @@ if (matrix) {
 /* =====================================================
    INITIAL STATE
    ===================================================== */
+
+applyTheme();
 
 updateUserAvatar();
