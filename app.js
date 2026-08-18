@@ -1,13 +1,17 @@
+
 /* =====================================================
    FAIR — APP.JS
    ===================================================== */
 
-const STORAGE_KEY = "fair_data_v2";
+const STORAGE_KEY = "fair_data_v3";
 
 const DB_NAME = "fair_music_db";
 const DB_VERSION = 1;
 const TRACK_STORE = "tracks";
 
+/*
+   Cloudflare Worker
+*/
 const AI_WORKER_URL =
   "https://summer-heart-97c3.comedyfox6.workers.dev/";
 
@@ -25,14 +29,82 @@ const defaultData = {
 
 
 let data = loadData();
-
 let currentCharacter = null;
-
 let newCharacterAvatar = "";
+
+let musicDBPromise = null;
 
 
 /* =====================================================
-   STORAGE — LOCAL
+   HELPERS
+   ===================================================== */
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+
+function makeId() {
+
+  return (
+    Date.now().toString(36) +
+    Math.random().toString(36).slice(2)
+  );
+
+}
+
+
+function escapeHTML(value) {
+
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+}
+
+
+function avatarPlaceholder(name = "?") {
+
+  const letter =
+    name.trim().charAt(0).toUpperCase() || "?";
+
+  return (
+    "data:image/svg+xml;charset=UTF-8," +
+    encodeURIComponent(`
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="300"
+        height="300"
+        viewBox="0 0 300 300"
+      >
+        <rect
+          width="300"
+          height="300"
+          fill="#17131a"
+        />
+
+        <text
+          x="150"
+          y="175"
+          text-anchor="middle"
+          font-family="Arial"
+          font-size="110"
+          fill="#d989bc"
+        >
+          ${letter}
+        </text>
+      </svg>
+    `)
+  );
+
+}
+
+
+/* =====================================================
+   LOCAL STORAGE
    ===================================================== */
 
 function loadData() {
@@ -72,7 +144,10 @@ function loadData() {
             : [],
 
         chats:
-          parsed.chats || {}
+          parsed.chats &&
+          typeof parsed.chats === "object"
+            ? parsed.chats
+            : {}
 
       };
 
@@ -121,351 +196,6 @@ function saveData() {
 
 
 /* =====================================================
-   HELPERS
-   ===================================================== */
-
-function $(id) {
-
-  return document.getElementById(id);
-
-}
-
-
-function makeId() {
-
-  return (
-    Date.now().toString(36) +
-    Math.random()
-      .toString(36)
-      .slice(2)
-  );
-
-}
-
-
-function escapeHTML(value) {
-
-  return String(value)
-
-    .replaceAll(
-      "&",
-      "&amp;"
-    )
-
-    .replaceAll(
-      "<",
-      "&lt;"
-    )
-
-    .replaceAll(
-      ">",
-      "&gt;"
-    )
-
-    .replaceAll(
-      '"',
-      "&quot;"
-    )
-
-    .replaceAll(
-      "'",
-      "&#039;"
-    );
-
-}
-
-
-function avatarPlaceholder(
-  name = "?"
-) {
-
-  const letter =
-    name
-      .trim()
-      .charAt(0)
-      .toUpperCase() ||
-    "?";
-
-
-  return (
-    "data:image/svg+xml;charset=UTF-8," +
-    encodeURIComponent(`
-
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="300"
-        height="300"
-        viewBox="0 0 300 300"
-      >
-
-        <rect
-          width="300"
-          height="300"
-          fill="#17131a"
-        />
-
-        <text
-          x="150"
-          y="175"
-          text-anchor="middle"
-          font-family="Arial"
-          font-size="110"
-          fill="#d989bc"
-        >
-          ${letter}
-        </text>
-
-      </svg>
-
-    `)
-  );
-
-}
-
-
-/* =====================================================
-   INDEXEDDB — MUSIC
-   ===================================================== */
-
-let musicDBPromise = null;
-
-
-function openMusicDB() {
-
-  if (musicDBPromise) {
-
-    return musicDBPromise;
-
-  }
-
-
-  musicDBPromise =
-    new Promise(
-      (resolve, reject) => {
-
-        const request =
-          indexedDB.open(
-            DB_NAME,
-            DB_VERSION
-          );
-
-
-        request.onupgradeneeded =
-          event => {
-
-            const db =
-              event.target.result;
-
-
-            if (
-              !db.objectStoreNames
-                .contains(
-                  TRACK_STORE
-                )
-            ) {
-
-              db.createObjectStore(
-                TRACK_STORE,
-                {
-                  keyPath: "id"
-                }
-              );
-
-            }
-
-          };
-
-
-        request.onsuccess = () => {
-
-          resolve(
-            request.result
-          );
-
-        };
-
-
-        request.onerror = () => {
-
-          console.error(
-            "Fair IndexedDB error:",
-            request.error
-          );
-
-          reject(
-            request.error
-          );
-
-        };
-
-      }
-    );
-
-
-  return musicDBPromise;
-
-}
-
-
-async function saveTrackToDB(
-  track
-) {
-
-  const db =
-    await openMusicDB();
-
-
-  return new Promise(
-    (resolve, reject) => {
-
-      const transaction =
-        db.transaction(
-          TRACK_STORE,
-          "readwrite"
-        );
-
-
-      const store =
-        transaction.objectStore(
-          TRACK_STORE
-        );
-
-
-      store.put(track);
-
-
-      transaction.oncomplete =
-        () => {
-
-          resolve();
-
-        };
-
-
-      transaction.onerror =
-        () => {
-
-          reject(
-            transaction.error
-          );
-
-        };
-
-    }
-  );
-
-}
-
-
-async function getAllTracksFromDB() {
-
-  const db =
-    await openMusicDB();
-
-
-  return new Promise(
-    (resolve, reject) => {
-
-      const transaction =
-        db.transaction(
-          TRACK_STORE,
-          "readonly"
-        );
-
-
-      const store =
-        transaction.objectStore(
-          TRACK_STORE
-        );
-
-
-      const request =
-        store.getAll();
-
-
-      request.onsuccess = () => {
-
-        const tracks =
-          request.result || [];
-
-
-        tracks.sort(
-          (a, b) =>
-            (a.createdAt || 0) -
-            (b.createdAt || 0)
-        );
-
-
-        resolve(tracks);
-
-      };
-
-
-      request.onerror = () => {
-
-        reject(
-          request.error
-        );
-
-      };
-
-    }
-  );
-
-}
-
-
-async function deleteTrackFromDB(
-  id
-) {
-
-  const db =
-    await openMusicDB();
-
-
-  return new Promise(
-    (resolve, reject) => {
-
-      const transaction =
-        db.transaction(
-          TRACK_STORE,
-          "readwrite"
-        );
-
-
-      const store =
-        transaction.objectStore(
-          TRACK_STORE
-        );
-
-
-      store.delete(id);
-
-
-      transaction.oncomplete =
-        () => {
-
-          resolve();
-
-        };
-
-
-      transaction.onerror =
-        () => {
-
-          reject(
-            transaction.error
-          );
-
-        };
-
-    }
-  );
-
-}
-
-
-/* =====================================================
    ENTER APP
    ===================================================== */
 
@@ -493,7 +223,6 @@ function enterApp() {
     "hidden"
   );
 
-
   app.classList.remove(
     "hidden"
   );
@@ -511,6 +240,11 @@ $("guestLogin")?.addEventListener(
   enterApp
 );
 
+
+/*
+   Если старая кнопка Google
+   случайно осталась в HTML.
+*/
 
 $("googleLogin")?.addEventListener(
   "click",
@@ -531,85 +265,86 @@ $("googleLogin")?.addEventListener(
 function showPage(page) {
 
   const pages = [
-
     "homePage",
-
     "createPage",
-
     "tracksPage",
-
     "profilePage",
-
     "chatPage"
-
   ];
 
 
-  pages.forEach(
-    id => {
+  pages.forEach(id => {
 
-      const element =
-        $(id);
+    const element =
+      $(id);
 
 
-      if (element) {
+    if (element) {
 
-        element.classList.add(
-          "hidden"
-        );
-
-      }
+      element.classList.add(
+        "hidden"
+      );
 
     }
-  );
+
+  });
 
 
   const target =
     $(page + "Page");
 
 
-  if (target) {
-
-    target.classList.remove(
-      "hidden"
-    );
-
+  if (!target) {
+    return;
   }
+
+
+  target.classList.remove(
+    "hidden"
+  );
 
 
   document
     .querySelectorAll(
       ".nav-button"
     )
-    .forEach(
-      button => {
+    .forEach(button => {
 
-        button.classList.toggle(
-          "active",
-          button.dataset.page === page
-        );
+      button.classList.toggle(
+        "active",
+        button.dataset.page === page
+      );
 
-      }
-    );
+    });
 
 
   if (page === "home") {
-
     renderHome();
-
   }
 
 
   if (page === "tracks") {
-
     renderTracks();
-
   }
 
 
   if (page === "profile") {
-
     renderProfile();
+  }
+
+
+  if (page === "chat") {
+
+    setTimeout(() => {
+
+      const input =
+        $("chatInput");
+
+      if (input) {
+        input.focus();
+      }
+
+    }, 50);
 
   }
 
@@ -617,29 +352,27 @@ function showPage(page) {
 
 
 /* =====================================================
-   NAV BUTTONS
+   NAVIGATION BUTTONS
    ===================================================== */
 
 document
   .querySelectorAll(
     ".nav-button"
   )
-  .forEach(
-    button => {
+  .forEach(button => {
 
-      button.addEventListener(
-        "click",
-        () => {
+    button.addEventListener(
+      "click",
+      () => {
 
-          showPage(
-            button.dataset.page
-          );
+        showPage(
+          button.dataset.page
+        );
 
-        }
-      );
+      }
+    );
 
-    }
-  );
+  });
 
 
 $("createNav")?.addEventListener(
@@ -648,11 +381,10 @@ $("createNav")?.addEventListener(
 );
 
 
-$("emptyCreateButton")
-  ?.addEventListener(
-    "click",
-    openCreate
-  );
+$("emptyCreateButton")?.addEventListener(
+  "click",
+  openCreate
+);
 
 
 function openCreate() {
@@ -664,37 +396,61 @@ function openCreate() {
 }
 
 
+/* =====================================================
+   BACK BUTTONS
+   ===================================================== */
+
+/*
+   Все обычные data-page кнопки.
+*/
+
 document
   .querySelectorAll(
     "[data-page]"
   )
-  .forEach(
-    button => {
+  .forEach(button => {
 
-      if (
-        button.classList.contains(
-          "nav-button"
-        )
-      ) {
+    if (
+      button.classList.contains(
+        "nav-button"
+      )
+    ) {
+      return;
+    }
 
-        return;
+
+    button.addEventListener(
+      "click",
+      event => {
+
+        event.preventDefault();
+
+        showPage(
+          button.dataset.page
+        );
 
       }
+    );
+
+  });
 
 
-      button.addEventListener(
-        "click",
-        () => {
+/*
+   Отдельная кнопка назад из чата.
+*/
 
-          showPage(
-            button.dataset.page
-          );
+$("chatBack")?.addEventListener(
+  "click",
+  event => {
 
-        }
-      );
+    event.preventDefault();
 
-    }
-  );
+    currentCharacter = null;
+
+    showPage("home");
+
+  }
+);
 
 
 /* =====================================================
@@ -721,9 +477,7 @@ function renderCharacters() {
 
 
   if (!grid) {
-
     return;
-
   }
 
 
@@ -752,6 +506,8 @@ function renderCharacters() {
           "button"
         );
 
+
+      card.type = "button";
 
       card.className =
         "character-card";
@@ -821,9 +577,7 @@ function renderRecentChats() {
 
 
   if (!container) {
-
     return;
-
   }
 
 
@@ -835,49 +589,47 @@ function renderRecentChats() {
 
   Object.keys(
     data.chats
-  )
-    .forEach(
-      characterId => {
+  ).forEach(
+    characterId => {
 
-        const character =
-          data.characters.find(
-            c =>
-              c.id ===
-              characterId
-          );
+      const character =
+        data.characters.find(
+          c =>
+            c.id === characterId
+        );
 
 
-        const messages =
-          data.chats[
-            characterId
+      const messages =
+        data.chats[
+          characterId
+        ];
+
+
+      if (
+        character &&
+        Array.isArray(messages) &&
+        messages.length
+      ) {
+
+        const last =
+          messages[
+            messages.length - 1
           ];
 
 
-        if (
-          character &&
-          messages &&
-          messages.length
-        ) {
+        recent.push({
 
-          const last =
-            messages[
-              messages.length - 1
-            ];
+          character,
 
+          time:
+            last.time || 0
 
-          recent.push({
-
-            character,
-
-            time:
-              last.time || 0
-
-          });
-
-        }
+        });
 
       }
-    );
+
+    }
+  );
 
 
   recent.sort(
@@ -889,11 +641,9 @@ function renderRecentChats() {
   if (!recent.length) {
 
     container.innerHTML = `
-
       <div class="empty-recent">
         Здесь появятся последние разговоры
       </div>
-
     `;
 
     return;
@@ -903,60 +653,60 @@ function renderRecentChats() {
 
   recent
     .slice(0, 10)
-    .forEach(
-      item => {
+    .forEach(item => {
 
-        const button =
-          document.createElement(
-            "button"
-          );
-
-
-        button.className =
-          "recent-card";
+      const button =
+        document.createElement(
+          "button"
+        );
 
 
-        const avatar =
-          item.character.avatar ||
-          avatarPlaceholder(
+      button.type = "button";
+
+      button.className =
+        "recent-card";
+
+
+      const avatar =
+        item.character.avatar ||
+        avatarPlaceholder(
+          item.character.name
+        );
+
+
+      button.innerHTML = `
+
+        <img
+          src="${avatar}"
+          alt=""
+        >
+
+        <span>
+          ${escapeHTML(
             item.character.name
+          )}
+        </span>
+
+      `;
+
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          openChat(
+            item.character.id
           );
 
-
-        button.innerHTML = `
-
-          <img
-            src="${avatar}"
-            alt=""
-          >
-
-          <span>
-            ${escapeHTML(
-              item.character.name
-            )}
-          </span>
-
-        `;
+        }
+      );
 
 
-        button.addEventListener(
-          "click",
-          () => {
+      container.appendChild(
+        button
+      );
 
-            openChat(
-              item.character.id
-            );
-
-          }
-        );
-
-
-        container.appendChild(
-          button
-        );
-
-      }
-    );
+    });
 
 }
 
@@ -965,78 +715,82 @@ function renderRecentChats() {
    CREATE CHARACTER
    ===================================================== */
 
-$("characterAvatar")
-  ?.addEventListener(
-    "change",
-    event => {
+$("characterAvatar")?.addEventListener(
+  "change",
+  event => {
 
-      const file =
-        event.target.files[0];
-
-
-      if (!file) {
-
-        return;
-
-      }
+    const file =
+      event.target.files?.[0];
 
 
-      if (
-        file.type &&
-        !file.type.startsWith(
-          "image/"
-        )
-      ) {
-
-        alert(
-          "Нужен именно файл изображения."
-        );
-
-        return;
-
-      }
+    if (!file) {
+      return;
+    }
 
 
-      const reader =
-        new FileReader();
+    if (
+      file.type &&
+      !file.type.startsWith(
+        "image/"
+      )
+    ) {
 
-
-      reader.onload = () => {
-
-        newCharacterAvatar =
-          reader.result;
-
-
-        if (
-          $("characterAvatarPreview")
-        ) {
-
-          $("characterAvatarPreview")
-            .src =
-            reader.result;
-
-        }
-
-
-        if (
-          $("characterAvatarPlaceholder")
-        ) {
-
-          $("characterAvatarPlaceholder")
-            .style.display =
-            "none";
-
-        }
-
-      };
-
-
-      reader.readAsDataURL(
-        file
+      alert(
+        "Нужен именно файл изображения."
       );
 
+      return;
+
     }
-  );
+
+
+    const reader =
+      new FileReader();
+
+
+    reader.onload = () => {
+
+      newCharacterAvatar =
+        reader.result;
+
+
+      const preview =
+        $("characterAvatarPreview");
+
+
+      const placeholder =
+        $("characterAvatarPlaceholder");
+
+
+      if (preview) {
+        preview.src =
+          reader.result;
+      }
+
+
+      if (placeholder) {
+        placeholder.style.display =
+          "none";
+      }
+
+    };
+
+
+    reader.onerror = () => {
+
+      alert(
+        "Не удалось прочитать изображение."
+      );
+
+    };
+
+
+    reader.readAsDataURL(
+      file
+    );
+
+  }
+);
 
 
 $("createCharacterButton")
@@ -1073,8 +827,7 @@ function createCharacter() {
 
     gender:
       $("characterGender")
-        ?.value ||
-      "",
+        ?.value || "",
 
     avatar:
       newCharacterAvatar,
@@ -1082,32 +835,27 @@ function createCharacter() {
     description:
       $("characterDescription")
         ?.value
-        .trim() ||
-      "",
+        .trim() || "",
 
     personality:
       $("characterPersonality")
         ?.value
-        .trim() ||
-      "",
+        .trim() || "",
 
     greeting:
       $("characterGreeting")
         ?.value
-        .trim() ||
-      "",
+        .trim() || "",
 
     userPersona:
       $("userPersona")
         ?.value
-        .trim() ||
-      "",
+        .trim() || "",
 
     instructions:
       $("characterInstructions")
         ?.value
-        .trim() ||
-      "",
+        .trim() || "",
 
     createdAt:
       Date.now()
@@ -1142,35 +890,23 @@ function createCharacter() {
 function resetCreateForm() {
 
   [
-
     "characterName",
-
     "characterDescription",
-
     "characterPersonality",
-
     "characterGreeting",
-
     "userPersona",
-
     "characterInstructions"
+  ].forEach(id => {
 
-  ]
-    .forEach(
-      id => {
-
-        const input =
-          $(id);
+    const input =
+      $(id);
 
 
-        if (input) {
+    if (input) {
+      input.value = "";
+    }
 
-          input.value = "";
-
-        }
-
-      }
-    );
+  });
 
 
   if ($("characterGender")) {
@@ -1184,9 +920,7 @@ function resetCreateForm() {
   newCharacterAvatar = "";
 
 
-  if (
-    $("characterAvatarPreview")
-  ) {
+  if ($("characterAvatarPreview")) {
 
     $("characterAvatarPreview")
       .src = "";
@@ -1194,9 +928,7 @@ function resetCreateForm() {
   }
 
 
-  if (
-    $("characterAvatarPlaceholder")
-  ) {
+  if ($("characterAvatarPlaceholder")) {
 
     $("characterAvatarPlaceholder")
       .style.display = "";
@@ -1218,22 +950,17 @@ function resetCreateForm() {
    CHAT
    ===================================================== */
 
-function openChat(
-  characterId
-) {
+function openChat(characterId) {
 
   const character =
     data.characters.find(
       c =>
-        c.id ===
-        characterId
+        c.id === characterId
     );
 
 
   if (!character) {
-
     return;
-
   }
 
 
@@ -1241,23 +968,32 @@ function openChat(
     character;
 
 
-  if ($("chatName")) {
+  const name =
+    $("chatName");
 
-    $("chatName")
-      .textContent =
+
+  const avatar =
+    $("chatAvatar");
+
+
+  if (name) {
+
+    name.textContent =
       character.name;
 
   }
 
 
-  if ($("chatAvatar")) {
+  if (avatar) {
 
-    $("chatAvatar")
-      .src =
+    avatar.src =
       character.avatar ||
       avatarPlaceholder(
         character.name
       );
+
+    avatar.style.display =
+      "block";
 
   }
 
@@ -1265,17 +1001,6 @@ function openChat(
   showPage("chat");
 
   renderChat();
-
-
-  setTimeout(
-    () => {
-
-      $("chatInput")
-        ?.focus();
-
-    },
-    100
-  );
 
 }
 
@@ -1290,9 +1015,7 @@ function renderChat() {
     !container ||
     !currentCharacter
   ) {
-
     return;
-
   }
 
 
@@ -1304,6 +1027,11 @@ function renderChat() {
       currentCharacter.id
     ] || [];
 
+
+  /*
+     Приветствие показываем визуально,
+     но не сохраняем повторно.
+  */
 
   if (
     messages.length === 0 &&
@@ -1329,6 +1057,16 @@ function renderChat() {
     }
   );
 
+
+  requestAnimationFrame(
+    () => {
+
+      container.scrollTop =
+        container.scrollHeight;
+
+    }
+  );
+
 }
 
 
@@ -1342,9 +1080,7 @@ function addMessage(
 
 
   if (!container) {
-
     return;
-
   }
 
 
@@ -1377,11 +1113,74 @@ function addMessage(
    AI CHAT — CLOUDFLARE WORKER
    ===================================================== */
 
-async function askAI(
-  character,
-  history,
-  text
-) {
+async function askAI(text) {
+
+  if (!currentCharacter) {
+    throw new Error(
+      "Персонаж не выбран."
+    );
+  }
+
+
+  const history =
+    data.chats[
+      currentCharacter.id
+    ] || [];
+
+
+  /*
+     Формат совместим с Worker:
+       character
+       userPersona
+       history
+       userMessage
+  */
+
+  const payload = {
+
+    character: {
+
+      name:
+        currentCharacter.name,
+
+      gender:
+        currentCharacter.gender,
+
+      description:
+        currentCharacter.description,
+
+      personality:
+        currentCharacter.personality,
+
+      greeting:
+        currentCharacter.greeting,
+
+      instructions:
+        currentCharacter.instructions
+
+    },
+
+    userPersona:
+      currentCharacter.userPersona || "",
+
+    history:
+      history.map(
+        message => ({
+
+          role:
+            message.role,
+
+          content:
+            message.content
+
+        })
+      ),
+
+    userMessage:
+      text
+
+  };
+
 
   const response =
     await fetch(
@@ -1395,50 +1194,10 @@ async function askAI(
             "application/json"
         },
 
-        body: JSON.stringify({
-
-          character: {
-
-            name:
-              character.name,
-
-            gender:
-              character.gender,
-
-            description:
-              character.description,
-
-            personality:
-              character.personality,
-
-            greeting:
-              character.greeting,
-
-            instructions:
-              character.instructions
-
-          },
-
-          userPersona:
-            character.userPersona || "",
-
-          history:
-            history.map(
-              message => ({
-
-                role:
-                  message.role,
-
-                content:
-                  message.content
-
-              })
-            ),
-
-          userMessage:
-            text
-
-        })
+        body:
+          JSON.stringify(
+            payload
+          )
 
       }
     );
@@ -1446,34 +1205,16 @@ async function askAI(
 
   if (!response.ok) {
 
-    throw new Error(
-      `Worker HTTP ${response.status}`
-    );
-
-  }
-
-
-  const contentType =
-    response.headers.get(
-      "content-type"
-    ) || "";
-
-
-  if (
-    !contentType.includes(
-      "application/json"
-    )
-  ) {
-
-    const raw =
-      await response.text();
+    const errorText =
+      await response.text()
+        .catch(() => "");
 
 
     throw new Error(
-      `Worker вернул не JSON: ${raw.slice(
-        0,
-        200
-      )}`
+      `Worker ${response.status}: ${
+        errorText ||
+        "неизвестная ошибка"
+      }`
     );
 
   }
@@ -1484,31 +1225,39 @@ async function askAI(
 
 
   /*
-    Поддерживаем несколько
-    распространённых форматов ответа.
+     Поддерживаем несколько
+     распространённых форматов
+     ответа Worker.
   */
 
-  const reply =
+  const answer =
     result.reply ??
-    result.message ??
     result.response ??
+    result.message ??
     result.content ??
-    result.text;
+    result.text ??
+    result.output?.text ??
+    result.choices?.[0]?.message?.content;
 
 
   if (
-    typeof reply !== "string" ||
-    !reply.trim()
+    typeof answer !== "string" ||
+    !answer.trim()
   ) {
 
+    console.error(
+      "Неожиданный ответ Worker:",
+      result
+    );
+
     throw new Error(
-      "Worker не вернул текст ответа."
+      "Worker вернул ответ без текста."
     );
 
   }
 
 
-  return reply.trim();
+  return answer.trim();
 
 }
 
@@ -1517,39 +1266,35 @@ async function askAI(
    SEND MESSAGE
    ===================================================== */
 
-$("sendMessage")
-  ?.addEventListener(
-    "click",
-    sendMessage
-  );
+$("sendMessage")?.addEventListener(
+  "click",
+  sendMessage
+);
 
 
-$("chatInput")
-  ?.addEventListener(
-    "keydown",
-    event => {
+$("chatInput")?.addEventListener(
+  "keydown",
+  event => {
 
-      if (
-        event.key === "Enter" &&
-        !event.shiftKey
-      ) {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey
+    ) {
 
-        event.preventDefault();
+      event.preventDefault();
 
-        sendMessage();
-
-      }
+      sendMessage();
 
     }
-  );
+
+  }
+);
 
 
 async function sendMessage() {
 
   if (!currentCharacter) {
-
     return;
-
   }
 
 
@@ -1558,9 +1303,7 @@ async function sendMessage() {
 
 
   if (!input) {
-
     return;
-
   }
 
 
@@ -1569,42 +1312,34 @@ async function sendMessage() {
 
 
   if (!text) {
-
     return;
-
   }
 
 
   input.value = "";
 
-  input.disabled = true;
 
-
-  const characterId =
-    currentCharacter.id;
-
+  /*
+     Сохраняем сообщение пользователя.
+  */
 
   if (
-    !data.chats[
-      characterId
-    ]
+    !Array.isArray(
+      data.chats[
+        currentCharacter.id
+      ]
+    )
   ) {
 
     data.chats[
-      characterId
+      currentCharacter.id
     ] = [];
 
   }
 
 
-  const history =
-    data.chats[
-      characterId
-    ].slice();
-
-
   data.chats[
-    characterId
+    currentCharacter.id
   ].push({
 
     role: "user",
@@ -1628,9 +1363,7 @@ async function sendMessage() {
 
 
   /*
-    Небольшой индикатор,
-    чтобы было понятно,
-    что запрос отправляется.
+     Временное сообщение.
   */
 
   const typing =
@@ -1640,15 +1373,11 @@ async function sendMessage() {
 
 
   typing.className =
-    "message bot";
+    "message bot typing-message";
 
 
   typing.textContent =
     "…";
-
-
-  typing.dataset.typing =
-    "true";
 
 
   $("chatMessages")
@@ -1657,36 +1386,27 @@ async function sendMessage() {
     );
 
 
-  if ($("chatMessages")) {
-
+  $("chatMessages").scrollTop =
     $("chatMessages")
-      .scrollTop =
-      $("chatMessages")
-        .scrollHeight;
-
-  }
+      .scrollHeight;
 
 
   try {
 
-    const reply =
-      await askAI(
-        currentCharacter,
-        history,
-        text
-      );
+    const answer =
+      await askAI(text);
 
 
     typing.remove();
 
 
     data.chats[
-      characterId
+      currentCharacter.id
     ].push({
 
       role: "bot",
 
-      content: reply,
+      content: answer,
 
       time: Date.now()
 
@@ -1695,7 +1415,7 @@ async function sendMessage() {
 
     addMessage(
       "bot",
-      reply
+      answer
     );
 
 
@@ -1714,16 +1434,29 @@ async function sendMessage() {
     typing.remove();
 
 
-    addMessage(
-      "bot",
-      "Не удалось получить ответ от AI. Проверь Worker и попробуй ещё раз."
-    );
+    const errorMessage =
+      document.createElement(
+        "div"
+      );
 
-  } finally {
 
-    input.disabled = false;
+    errorMessage.className =
+      "message bot ai-error";
 
-    input.focus();
+
+    errorMessage.textContent =
+      "Не удалось получить ответ от персонажа.";
+
+
+    $("chatMessages")
+      ?.appendChild(
+        errorMessage
+      );
+
+
+    $("chatMessages").scrollTop =
+      $("chatMessages")
+        .scrollHeight;
 
   }
 
@@ -1734,48 +1467,65 @@ async function sendMessage() {
    PROFILE
    ===================================================== */
 
-$("profileButton")
-  ?.addEventListener(
-    "click",
-    () =>
-      showPage("profile")
-  );
+$("profileButton")?.addEventListener(
+  "click",
+  () => {
+
+    showPage("profile");
+
+  }
+);
 
 
 function renderProfile() {
 
-  if (!$("userName")) {
+  const nameInput =
+    $("userName");
 
+
+  if (!nameInput) {
     return;
-
   }
 
 
-  $("userName").value =
+  nameInput.value =
     data.user.name || "";
 
 
+  const preview =
+    $("profileAvatarPreview");
+
+
+  const placeholder =
+    $("profileAvatarPlaceholder");
+
+
   if (
-    data.user.avatar
+    data.user.avatar &&
+    preview &&
+    placeholder
   ) {
 
-    $("profileAvatarPreview")
-      .src =
+    preview.src =
       data.user.avatar;
 
+    preview.style.display =
+      "block";
 
-    $("profileAvatarPlaceholder")
-      .style.display =
+    placeholder.style.display =
       "none";
 
-  } else {
+  } else if (
+    preview &&
+    placeholder
+  ) {
 
-    $("profileAvatarPreview")
-      .src = "";
+    preview.src = "";
 
+    preview.style.display =
+      "none";
 
-    $("profileAvatarPlaceholder")
-      .style.display =
+    placeholder.style.display =
       "";
 
   }
@@ -1792,13 +1542,11 @@ $("userAvatarInput")
     event => {
 
       const file =
-        event.target.files[0];
+        event.target.files?.[0];
 
 
       if (!file) {
-
         return;
-
       }
 
 
@@ -1850,8 +1598,8 @@ $("saveProfile")
 
       data.user.name =
         $("userName")
-          .value
-          .trim();
+          ?.value
+          .trim() || "";
 
 
       saveData();
@@ -1878,32 +1626,27 @@ function updateUserAvatar() {
     !image ||
     !placeholder
   ) {
-
     return;
-
   }
 
 
-  if (
-    data.user.avatar
-  ) {
+  if (data.user.avatar) {
 
     image.src =
       data.user.avatar;
 
-
     image.style.display =
       "block";
-
 
     placeholder.style.display =
       "none";
 
   } else {
 
+    image.src = "";
+
     image.style.display =
       "none";
-
 
     placeholder.style.display =
       "inline";
@@ -1914,7 +1657,240 @@ function updateUserAvatar() {
 
 
 /* =====================================================
-   TRACKS — UPLOAD
+   INDEXEDDB — MUSIC
+   ===================================================== */
+
+function openMusicDB() {
+
+  if (musicDBPromise) {
+    return musicDBPromise;
+  }
+
+
+  musicDBPromise =
+    new Promise(
+      (resolve, reject) => {
+
+        const request =
+          indexedDB.open(
+            DB_NAME,
+            DB_VERSION
+          );
+
+
+        request.onupgradeneeded =
+          event => {
+
+            const db =
+              event.target.result;
+
+
+            if (
+              !db.objectStoreNames
+                .contains(
+                  TRACK_STORE
+                )
+            ) {
+
+              db.createObjectStore(
+                TRACK_STORE,
+                {
+                  keyPath: "id"
+                }
+              );
+
+            }
+
+          };
+
+
+        request.onsuccess =
+          () => {
+
+            resolve(
+              request.result
+            );
+
+          };
+
+
+        request.onerror =
+          () => {
+
+            console.error(
+              "Fair IndexedDB error:",
+              request.error
+            );
+
+            reject(
+              request.error
+            );
+
+          };
+
+      }
+    );
+
+
+  return musicDBPromise;
+
+}
+
+
+async function saveTrackToDB(
+  track
+) {
+
+  const db =
+    await openMusicDB();
+
+
+  return new Promise(
+    (resolve, reject) => {
+
+      const transaction =
+        db.transaction(
+          TRACK_STORE,
+          "readwrite"
+        );
+
+
+      const store =
+        transaction.objectStore(
+          TRACK_STORE
+        );
+
+
+      store.put(track);
+
+
+      transaction.oncomplete =
+        () => resolve();
+
+
+      transaction.onerror =
+        () => {
+
+          reject(
+            transaction.error
+          );
+
+        };
+
+    }
+  );
+
+}
+
+
+async function getAllTracksFromDB() {
+
+  const db =
+    await openMusicDB();
+
+
+  return new Promise(
+    (resolve, reject) => {
+
+      const transaction =
+        db.transaction(
+          TRACK_STORE,
+          "readonly"
+        );
+
+
+      const store =
+        transaction.objectStore(
+          TRACK_STORE
+        );
+
+
+      const request =
+        store.getAll();
+
+
+      request.onsuccess =
+        () => {
+
+          const tracks =
+            request.result || [];
+
+
+          tracks.sort(
+            (a, b) =>
+              (a.createdAt || 0) -
+              (b.createdAt || 0)
+          );
+
+
+          resolve(
+            tracks
+          );
+
+        };
+
+
+      request.onerror =
+        () => {
+
+          reject(
+            request.error
+          );
+
+        };
+
+    }
+  );
+
+}
+
+
+async function deleteTrackFromDB(
+  id
+) {
+
+  const db =
+    await openMusicDB();
+
+
+  return new Promise(
+    (resolve, reject) => {
+
+      const transaction =
+        db.transaction(
+          TRACK_STORE,
+          "readwrite"
+        );
+
+
+      transaction
+        .objectStore(
+          TRACK_STORE
+        )
+        .delete(id);
+
+
+      transaction.oncomplete =
+        () => resolve();
+
+
+      transaction.onerror =
+        () => {
+
+          reject(
+            transaction.error
+          );
+
+        };
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   MUSIC UPLOAD
    ===================================================== */
 
 $("musicUpload")
@@ -1929,58 +1905,60 @@ async function handleMusicUpload(
 ) {
 
   const files =
-    [...event.target.files];
+    [...(
+      event.target.files || []
+    )];
 
 
   if (!files.length) {
-
     return;
-
   }
 
 
-  for (
-    const file of files
-  ) {
+  for (const file of files) {
 
     /*
-      Не доверяем только file.type.
-      На iOS он иногда пустой.
+       ВАЖНО:
+       На iOS file.type иногда пустой.
+       Поэтому НЕ проверяем только MIME.
     */
 
+    const name =
+      file.name || "";
+
+
     const extension =
-      file.name
+      name
         .split(".")
         .pop()
-        ?.toLowerCase();
+        .toLowerCase();
 
 
-    const allowed =
-      [
-
-        "mp3",
-        "m4a",
-        "wav",
-        "aac",
-        "flac",
-        "ogg",
-        "oga"
-
-      ];
+    const audioExtensions = [
+      "mp3",
+      "m4a",
+      "wav",
+      "aac",
+      "flac",
+      "ogg",
+      "oga",
+      "opus"
+    ];
 
 
-    if (
-      file.type &&
-      !file.type.startsWith(
+    const looksLikeAudio =
+      file.type.startsWith(
         "audio/"
-      ) &&
-      !allowed.includes(
+      ) ||
+      audioExtensions.includes(
         extension
-      )
-    ) {
+      );
+
+
+    if (!looksLikeAudio) {
 
       alert(
-        `«${file.name}» не похоже на аудиофайл.`
+        `«${name}» не похоже на аудиофайл.`
       );
 
       continue;
@@ -1995,7 +1973,8 @@ async function handleMusicUpload(
         id: makeId(),
 
         name:
-          file.name,
+          name ||
+          "Без названия",
 
         type:
           file.type ||
@@ -2014,6 +1993,7 @@ async function handleMusicUpload(
         track
       );
 
+
     } catch (error) {
 
       console.error(
@@ -2023,7 +2003,7 @@ async function handleMusicUpload(
 
 
       alert(
-        `Не удалось добавить «${file.name}».`
+        `Не удалось добавить «${name}».`
       );
 
     }
@@ -2040,7 +2020,7 @@ async function handleMusicUpload(
 
 
 /* =====================================================
-   TRACKS — RENDER
+   MUSIC RENDER
    ===================================================== */
 
 async function renderTracks() {
@@ -2054,9 +2034,7 @@ async function renderTracks() {
 
 
   if (!container) {
-
     return;
-
   }
 
 
@@ -2181,14 +2159,31 @@ async function renderTracks() {
 
 
         audio.addEventListener(
-          "loadeddata",
+          "error",
           () => {
 
-            /*
-              URL держим, пока аудио
-              нужно браузеру.
-            */
+            URL.revokeObjectURL(
+              url
+            );
 
+          },
+          {
+            once: true
+          }
+        );
+
+
+        audio.addEventListener(
+          "ended",
+          () => {
+
+            URL.revokeObjectURL(
+              url
+            );
+
+          },
+          {
+            once: true
           }
         );
 
@@ -2199,7 +2194,6 @@ async function renderTracks() {
         name
       );
 
-
       info.appendChild(
         audio
       );
@@ -2209,6 +2203,10 @@ async function renderTracks() {
         document.createElement(
           "button"
         );
+
+
+      deleteButton.type =
+        "button";
 
 
       deleteButton.className =
@@ -2230,16 +2228,12 @@ async function renderTracks() {
           event.stopPropagation();
 
 
-          const confirmed =
-            confirm(
+          if (
+            !confirm(
               `Удалить «${track.name}»?`
-            );
-
-
-          if (!confirmed) {
-
+            )
+          ) {
             return;
-
           }
 
 
@@ -2269,11 +2263,9 @@ async function renderTracks() {
         icon
       );
 
-
       item.appendChild(
         info
       );
-
 
       item.appendChild(
         deleteButton
@@ -2294,30 +2286,33 @@ async function renderTracks() {
    MORE
    ===================================================== */
 
-$("moreButton")
-  ?.addEventListener(
-    "click",
-    () => {
+$("moreButton")?.addEventListener(
+  "click",
+  () => {
 
-      alert(
-        "Настройки Fair появятся здесь."
-      );
+    alert(
+      "Настройки Fair появятся здесь."
+    );
 
+  }
+);
+
+
+$("chatMore")?.addEventListener(
+  "click",
+  () => {
+
+    if (!currentCharacter) {
+      return;
     }
-  );
 
 
-$("chatMore")
-  ?.addEventListener(
-    "click",
-    () => {
+    alert(
+      `Персонаж: ${currentCharacter.name}`
+    );
 
-      alert(
-        "Настройки персонажа появятся здесь."
-      );
-
-    }
-  );
+  }
+);
 
 
 /* =====================================================
@@ -2337,11 +2332,8 @@ if (matrix) {
 
 
   let width = 0;
-
   let height = 0;
-
   let columns = 0;
-
   let drops = [];
 
 
@@ -2352,8 +2344,7 @@ if (matrix) {
   function resizeMatrix() {
 
     const ratio =
-      window.devicePixelRatio ||
-      1;
+      window.devicePixelRatio || 1;
 
 
     width =
@@ -2399,12 +2390,10 @@ if (matrix) {
     drops =
       Array.from(
         {
-          length:
-            columns
+          length: columns
         },
         () =>
-          Math.random() *
-          -100
+          Math.random() * -100
       );
 
   }
