@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Chat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="app">
+
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="logo">AI</div>
+
+        <button id="newChat" class="plus" title="Новый чат">＋</button>
+      </div>
+
+      <div id="chatList" class="chat-list"></div>
+    </aside>
+
+    <main class="chat">
+
+      <header class="chat-header">
+        <div>
+          <div id="chatTitle">Новое чудо</div>
+          <div id="chatStatus">готов к общению</div>
+        </div>
+
+        <button id="settings" class="icon-button">⚙</button>
+      </header>
+
+      <div id="messages" class="messages">
+        <div class="empty">
+          <div class="empty-symbol">✦</div>
+          <div class="empty-title">Ну привет.</div>
+          <div class="empty-text">
+            Нажми ＋ и создай себе чудо.
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <textarea
+          id="message"
+          rows="1"
+          placeholder="Напиши что-нибудь..."
+        ></textarea>
+
+        <button id="send" class="send">➤</button>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    const chats = JSON.parse(
+      localStorage.getItem("ai_chats") || "[]"
+    );
+
+    let currentChat = null;
+
+    const chatList = document.getElementById("chatList");
+    const messages = document.getElementById("messages");
+    const messageInput = document.getElementById("message");
+    const sendButton = document.getElementById("send");
+    const newChatButton = document.getElementById("newChat");
+
+    function saveChats() {
+      localStorage.setItem(
+        "ai_chats",
+        JSON.stringify(chats)
+      );
+    }
+
+    function createChat() {
+      const chat = {
+        id: crypto.randomUUID(),
+
+        // Пока пусто.
+        // Потом сюда можно добавить имя/характер.
+        name: "Новое чудо",
+
+        system:
+          "Ты — живой собеседник. Отвечай естественно, сохраняй контекст разговора и не будь душнилой.",
+
+        messages: []
+      };
+
+      chats.unshift(chat);
+      currentChat = chat;
+
+      saveChats();
+      renderChatList();
+      renderChat();
+
+      messageInput.focus();
+    }
+
+    function renderChatList() {
+      chatList.innerHTML = "";
+
+      chats.forEach(chat => {
+        const item = document.createElement("button");
+
+        item.className =
+          "chat-item " +
+          (currentChat?.id === chat.id ? "active" : "");
+
+        item.textContent = chat.name;
+
+        item.onclick = () => {
+          currentChat = chat;
+          renderChatList();
+          renderChat();
+        };
+
+        chatList.appendChild(item);
+      });
+    }
+
+    function renderChat() {
+      if (!currentChat) {
+        messages.innerHTML = `
+          <div class="empty">
+            <div class="empty-symbol">✦</div>
+            <div class="empty-title">Ну привет.</div>
+            <div class="empty-text">
+              Нажми ＋ и создай себе чудо.
+            </div>
+          </div>
+        `;
+
+        return;
+      }
+
+      document.getElementById("chatTitle").textContent =
+        currentChat.name;
+
+      messages.innerHTML = "";
+
+      if (currentChat.messages.length === 0) {
+        messages.innerHTML = `
+          <div class="empty">
+            <div class="empty-symbol">✦</div>
+            <div class="empty-title">Чудо создано.</div>
+            <div class="empty-text">
+              Можешь начинать.
+            </div>
+          </div>
+        `;
+
+        return;
+      }
+
+      currentChat.messages.forEach(msg => {
+        addMessageToScreen(msg.role, msg.content);
+      });
+
+      scrollDown();
+    }
+
+    function addMessageToScreen(role, text) {
+      const bubble = document.createElement("div");
+
+      bubble.className =
+        "message " +
+        (role === "user" ? "user" : "assistant");
+
+      bubble.textContent = text;
+
+      messages.appendChild(bubble);
+    }
+
+    function scrollDown() {
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    async function sendMessage() {
+      if (!currentChat) {
+        createChat();
+      }
+
+      const text = messageInput.value.trim();
+
+      if (!text) return;
+
+      messageInput.value = "";
+
+      currentChat.messages.push({
+        role: "user",
+        content: text
+      });
+
+      addMessageToScreen("user", text);
+      scrollDown();
+      saveChats();
+
+      sendButton.disabled = true;
+      document.getElementById("chatStatus").textContent =
+        "думает...";
+
+      try {
+        /*
+          Здесь находится единственное место,
+          где нам потом понадобится настоящий мотор.
+
+          Backend должен принять:
+          {
+            chatId,
+            system,
+            messages
+          }
+
+          и вернуть:
+          {
+            reply: "..."
+          }
+        */
+
+        const response = await fetch(
+          "https://ТВОЙ-WORKER-URL/chat",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+              chatId: currentChat.id,
+
+              system: currentChat.system,
+
+              messages: currentChat.messages
+            })
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Server error");
+        }
+
+        const data = await response.json();
+
+        const reply =
+          data.reply || "[мотор промолчал]";
+
+        currentChat.messages.push({
+          role: "assistant",
+          content: reply
+        });
+
+        addMessageToScreen("assistant", reply);
+
+        saveChats();
+        scrollDown();
+
+      } catch (error) {
+
+        addMessageToScreen(
+          "assistant",
+          "Что-то сломалось. Мотор не отвечает."
+        );
+
+        console.error(error);
+
+      } finally {
+
+        sendButton.disabled = false;
+
+        document.getElementById("chatStatus").textContent =
+          "готов к общению";
+
+        messageInput.focus();
+      }
+    }
+
+    newChatButton.onclick = createChat;
+
+    sendButton.onclick = sendMessage;
+
+    messageInput.addEventListener(
+      "keydown",
+      event => {
+
+        if (
+          event.key === "Enter" &&
+          !event.shiftKey
+        ) {
+          event.preventDefault();
+          sendMessage();
+        }
+
+      }
+    );
+
+    renderChatList();
+
+    if (chats.length > 0) {
+      currentChat = chats[0];
+      renderChatList();
+      renderChat();
+    }
+  </script>
+</body>
+</html>
