@@ -2,8 +2,10 @@
    FAIR — APP.JS
    ===================================================== */
 
-const STORAGE_KEY = "fair_data_v1";
-const THEME_KEY = "fair_theme_v1";
+const STORAGE_KEY = "fair_data_v2";
+const DB_NAME = "fair_music_db";
+const DB_VERSION = 1;
+const TRACK_STORE = "tracks";
 
 const defaultData = {
   user: {
@@ -13,9 +15,7 @@ const defaultData = {
 
   characters: [],
 
-  chats: {},
-
-  tracks: []
+  chats: {}
 };
 
 let data = loadData();
@@ -24,7 +24,7 @@ let newCharacterAvatar = "";
 
 
 /* =====================================================
-   STORAGE
+   STORAGE — LOCAL
    ===================================================== */
 
 function loadData() {
@@ -41,9 +41,10 @@ function loadData() {
           ...defaultData.user,
           ...(parsed.user || {})
         },
-        characters: parsed.characters || [],
-        chats: parsed.chats || {},
-        tracks: parsed.tracks || []
+        characters: Array.isArray(parsed.characters)
+          ? parsed.characters
+          : [],
+        chats: parsed.chats || {}
       };
     }
   } catch (error) {
@@ -64,7 +65,7 @@ function saveData() {
     console.error("Fair save error:", error);
 
     alert(
-      "Fair: не удалось сохранить данные. Возможно, браузер переполнен."
+      "Fair не смог сохранить данные. Возможно, браузеру не хватает места."
     );
   }
 }
@@ -84,6 +85,16 @@ function makeId() {
     Date.now().toString(36) +
     Math.random().toString(36).slice(2)
   );
+}
+
+
+function escapeHTML(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 
@@ -123,15 +134,212 @@ function avatarPlaceholder(name = "?") {
 }
 
 
-function escapeHTML(value) {
+/* =====================================================
+   INDEXEDDB — MUSIC
+   ===================================================== */
 
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+let musicDBPromise = null;
 
+
+function openMusicDB() {
+
+  if (musicDBPromise) {
+    return musicDBPromise;
+  }
+
+  musicDBPromise = new Promise(
+    (resolve, reject) => {
+
+      const request =
+        indexedDB.open(
+          DB_NAME,
+          DB_VERSION
+        );
+
+
+      request.onupgradeneeded = event => {
+
+        const db =
+          event.target.result;
+
+
+        if (
+          !db.objectStoreNames.contains(
+            TRACK_STORE
+          )
+        ) {
+
+          db.createObjectStore(
+            TRACK_STORE,
+            {
+              keyPath: "id"
+            }
+          );
+
+        }
+
+      };
+
+
+      request.onsuccess = () => {
+        resolve(request.result);
+      };
+
+
+      request.onerror = () => {
+        console.error(
+          "Fair IndexedDB error:",
+          request.error
+        );
+
+        reject(request.error);
+      };
+
+    }
+  );
+
+  return musicDBPromise;
+}
+
+
+/* Сохранить один аудиофайл */
+
+async function saveTrackToDB(track) {
+
+  const db =
+    await openMusicDB();
+
+
+  return new Promise(
+    (resolve, reject) => {
+
+      const transaction =
+        db.transaction(
+          TRACK_STORE,
+          "readwrite"
+        );
+
+
+      const store =
+        transaction.objectStore(
+          TRACK_STORE
+        );
+
+
+      store.put(track);
+
+
+      transaction.oncomplete = () => {
+        resolve();
+      };
+
+
+      transaction.onerror = () => {
+        reject(
+          transaction.error
+        );
+      };
+
+    }
+  );
+}
+
+
+/* Получить все треки */
+
+async function getAllTracksFromDB() {
+
+  const db =
+    await openMusicDB();
+
+
+  return new Promise(
+    (resolve, reject) => {
+
+      const transaction =
+        db.transaction(
+          TRACK_STORE,
+          "readonly"
+        );
+
+
+      const store =
+        transaction.objectStore(
+          TRACK_STORE
+        );
+
+
+      const request =
+        store.getAll();
+
+
+      request.onsuccess = () => {
+
+        const tracks =
+          request.result || [];
+
+
+        tracks.sort(
+          (a, b) =>
+            (a.createdAt || 0) -
+            (b.createdAt || 0)
+        );
+
+
+        resolve(tracks);
+
+      };
+
+
+      request.onerror = () => {
+        reject(request.error);
+      };
+
+    }
+  );
+}
+
+
+/* Удалить трек */
+
+async function deleteTrackFromDB(id) {
+
+  const db =
+    await openMusicDB();
+
+
+  return new Promise(
+    (resolve, reject) => {
+
+      const transaction =
+        db.transaction(
+          TRACK_STORE,
+          "readwrite"
+        );
+
+
+      const store =
+        transaction.objectStore(
+          TRACK_STORE
+        );
+
+
+      store.delete(id);
+
+
+      transaction.oncomplete = () => {
+        resolve();
+      };
+
+
+      transaction.onerror = () => {
+        reject(
+          transaction.error
+        );
+      };
+
+    }
+  );
 }
 
 
@@ -144,22 +352,49 @@ function enterApp() {
   const welcome = $("welcome");
   const app = $("app");
 
+
   if (!welcome || !app) {
-    alert("Fair: элементы приложения не найдены.");
+
+    alert(
+      "Fair: элементы приложения не найдены."
+    );
+
     return;
   }
 
+
   welcome.classList.add("hidden");
+
   app.classList.remove("hidden");
 
-  applyTheme();
   showPage("home");
+
+  renderHome();
 }
 
+
+/* Только гостевой вход */
 
 $("guestLogin")?.addEventListener(
   "click",
   enterApp
+);
+
+
+/*
+   Если старый HTML всё ещё содержит Google,
+   он больше никуда не ведёт.
+*/
+
+$("googleLogin")?.addEventListener(
+  "click",
+  event => {
+
+    event.preventDefault();
+
+    enterApp();
+
+  }
 );
 
 
@@ -177,6 +412,7 @@ function showPage(page) {
     "chatPage"
   ];
 
+
   pages.forEach(id => {
 
     const element = $(id);
@@ -188,42 +424,12 @@ function showPage(page) {
   });
 
 
-  const target = $(page + "Page");
+  const target =
+    $(page + "Page");
+
 
   if (target) {
     target.classList.remove("hidden");
-  }
-
-
-  /*
-    Во время чата нижняя навигация убирается,
-    чтобы она не закрывала поле ввода.
-  */
-
-  const bottomNav =
-    document.querySelector(".bottom-nav");
-
-  if (bottomNav) {
-    bottomNav.classList.toggle(
-      "chat-mode",
-      page === "chat"
-    );
-  }
-
-
-  /*
-    Верхняя часть приложения тоже не должна
-    мешать полноценному экрану чата.
-  */
-
-  const topbar =
-    document.querySelector(".topbar");
-
-  if (topbar) {
-    topbar.classList.toggle(
-      "chat-mode",
-      page === "chat"
-    );
   }
 
 
@@ -243,26 +449,20 @@ function showPage(page) {
     renderHome();
   }
 
+
   if (page === "tracks") {
     renderTracks();
   }
+
 
   if (page === "profile") {
     renderProfile();
   }
 
-  if (page === "chat") {
-    setTimeout(() => {
-      $("chatInput")?.focus();
-    }, 50);
-  }
-
 }
 
 
-/* =====================================================
-   BOTTOM NAV
-   ===================================================== */
+/* Нижняя навигация */
 
 document
   .querySelectorAll(".nav-button")
@@ -283,7 +483,7 @@ document
 
 
 /* =====================================================
-   CREATE
+   CREATE NAVIGATION
    ===================================================== */
 
 $("createNav")?.addEventListener(
@@ -315,10 +515,13 @@ document
   .forEach(button => {
 
     if (
-      button.classList.contains("nav-button")
+      button.classList.contains(
+        "nav-button"
+      )
     ) {
       return;
     }
+
 
     button.addEventListener(
       "click",
@@ -332,18 +535,6 @@ document
     );
 
   });
-
-
-$("chatBack")?.addEventListener(
-  "click",
-  () => {
-
-    currentCharacter = null;
-
-    showPage("home");
-
-  }
-);
 
 
 /* =====================================================
@@ -365,15 +556,21 @@ function renderHome() {
 
 function renderCharacters() {
 
-  const grid = $("charactersGrid");
+  const grid =
+    $("charactersGrid");
+
 
   if (!grid) {
     return;
   }
 
+
   grid.innerHTML = "";
 
-  const empty = $("emptyCharacters");
+
+  const empty =
+    $("emptyCharacters");
+
 
   if (empty) {
 
@@ -385,55 +582,64 @@ function renderCharacters() {
   }
 
 
-  data.characters.forEach(character => {
+  data.characters.forEach(
+    character => {
 
-    const card =
-      document.createElement("button");
-
-    card.className =
-      "character-card";
-
-
-    const avatar =
-      character.avatar ||
-      avatarPlaceholder(character.name);
+      const card =
+        document.createElement(
+          "button"
+        );
 
 
-    card.innerHTML = `
-
-      <img
-        class="character-avatar"
-        src="${avatar}"
-        alt=""
-      >
-
-      <div class="character-card-name">
-        ${escapeHTML(character.name)}
-      </div>
-
-      <div class="character-card-description">
-        ${escapeHTML(
-          character.description ||
-          "Персонаж"
-        )}
-      </div>
-
-    `;
+      card.className =
+        "character-card";
 
 
-    card.addEventListener(
-      "click",
-      () => {
-
-        openChat(character.id);
-
-      }
-    );
+      const avatar =
+        character.avatar ||
+        avatarPlaceholder(
+          character.name
+        );
 
 
-    grid.appendChild(card);
+      card.innerHTML = `
 
-  });
+        <img
+          class="character-avatar"
+          src="${avatar}"
+          alt=""
+        >
+
+        <div class="character-card-name">
+          ${escapeHTML(character.name)}
+        </div>
+
+        <div class="character-card-description">
+          ${escapeHTML(
+            character.description ||
+            "Персонаж"
+          )}
+        </div>
+
+      `;
+
+
+      card.addEventListener(
+        "click",
+        () => {
+
+          openChat(
+            character.id
+          );
+
+        }
+      );
+
+
+      grid.appendChild(card);
+
+    }
+  );
 
 }
 
@@ -447,11 +653,14 @@ function renderRecentChats() {
   const container =
     $("recentChats");
 
+
   if (!container) {
     return;
   }
 
+
   container.innerHTML = "";
+
 
   const recent = [];
 
@@ -464,8 +673,11 @@ function renderRecentChats() {
           c => c.id === characterId
         );
 
+
       const messages =
-        data.chats[characterId];
+        data.chats[
+          characterId
+        ];
 
 
       if (
@@ -475,7 +687,9 @@ function renderRecentChats() {
       ) {
 
         const last =
-          messages[messages.length - 1];
+          messages[
+            messages.length - 1
+          ];
 
 
         recent.push({
@@ -511,7 +725,10 @@ function renderRecentChats() {
     .forEach(item => {
 
       const button =
-        document.createElement("button");
+        document.createElement(
+          "button"
+        );
+
 
       button.className =
         "recent-card";
@@ -552,7 +769,9 @@ function renderRecentChats() {
       );
 
 
-      container.appendChild(button);
+      container.appendChild(
+        button
+      );
 
     });
 
@@ -560,7 +779,7 @@ function renderRecentChats() {
 
 
 /* =====================================================
-   CREATE CHARACTER
+   CREATE CHARACTER — AVATAR
    ===================================================== */
 
 $("characterAvatar")?.addEventListener(
@@ -570,13 +789,22 @@ $("characterAvatar")?.addEventListener(
     const file =
       event.target.files[0];
 
+
     if (!file) {
       return;
     }
 
 
-    if (!file.type.startsWith("image/")) {
-      alert("Нужна именно картинка.");
+    if (
+      !file.type.startsWith(
+        "image/"
+      )
+    ) {
+
+      alert(
+        "Нужен именно файл изображения."
+      );
+
       return;
     }
 
@@ -591,12 +819,14 @@ $("characterAvatar")?.addEventListener(
         reader.result;
 
 
-      $("characterAvatarPreview").src =
+      $("characterAvatarPreview")
+        .src =
         reader.result;
 
 
       $("characterAvatarPlaceholder")
-        .style.display = "none";
+        .style.display =
+        "none";
 
     };
 
@@ -606,6 +836,10 @@ $("characterAvatar")?.addEventListener(
   }
 );
 
+
+/* =====================================================
+   CREATE CHARACTER
+   ===================================================== */
 
 $("createCharacterButton")
   ?.addEventListener(
@@ -618,7 +852,7 @@ function createCharacter() {
 
   const name =
     $("characterName")
-      .value
+      ?.value
       .trim();
 
 
@@ -639,35 +873,41 @@ function createCharacter() {
     name,
 
     gender:
-      $("characterGender").value,
+      $("characterGender")?.value ||
+      "",
 
     avatar:
       newCharacterAvatar,
 
     description:
       $("characterDescription")
-        .value
-        .trim(),
+        ?.value
+        .trim() ||
+      "",
 
     personality:
       $("characterPersonality")
-        .value
-        .trim(),
+        ?.value
+        .trim() ||
+      "",
 
     greeting:
       $("characterGreeting")
-        .value
-        .trim(),
+        ?.value
+        .trim() ||
+      "",
 
     userPersona:
       $("userPersona")
-        .value
-        .trim(),
+        ?.value
+        .trim() ||
+      "",
 
     instructions:
       $("characterInstructions")
-        .value
-        .trim(),
+        ?.value
+        .trim() ||
+      "",
 
     createdAt:
       Date.now()
@@ -680,13 +920,17 @@ function createCharacter() {
   );
 
 
-  data.chats[character.id] = [];
+  data.chats[
+    character.id
+  ] = [];
 
 
   saveData();
 
 
-  openChat(character.id);
+  openChat(
+    character.id
+  );
 
 }
 
@@ -707,7 +951,9 @@ function resetCreateForm() {
   ]
     .forEach(id => {
 
-      const input = $(id);
+      const input =
+        $(id);
+
 
       if (input) {
         input.value = "";
@@ -716,16 +962,31 @@ function resetCreateForm() {
     });
 
 
-  $("characterGender").value = "";
+  if ($("characterGender")) {
+    $("characterGender").value = "";
+  }
+
 
   newCharacterAvatar = "";
 
-  $("characterAvatarPreview").src = "";
 
-  $("characterAvatarPlaceholder")
-    .style.display = "";
+  if ($("characterAvatarPreview")) {
+    $("characterAvatarPreview")
+      .src = "";
+  }
 
-  $("characterAvatar").value = "";
+
+  if ($("characterAvatarPlaceholder")) {
+
+    $("characterAvatarPlaceholder")
+      .style.display = "";
+
+  }
+
+
+  if ($("characterAvatar")) {
+    $("characterAvatar").value = "";
+  }
 
 }
 
@@ -751,38 +1012,21 @@ function openChat(characterId) {
     character;
 
 
-  /*
-    Аватар ставим ДО открытия страницы.
-    Если его нет — создаём красивый placeholder.
-  */
+  if ($("chatName")) {
 
-  const avatar =
-    character.avatar ||
-    avatarPlaceholder(character.name);
-
-
-  const chatName =
-    $("chatName");
-
-  const chatAvatar =
-    $("chatAvatar");
-
-
-  if (chatName) {
-    chatName.textContent =
+    $("chatName").textContent =
       character.name;
+
   }
 
 
-  if (chatAvatar) {
+  if ($("chatAvatar")) {
 
-    chatAvatar.src = avatar;
-
-    chatAvatar.alt =
-      character.name;
-
-    chatAvatar.style.display =
-      "block";
+    $("chatAvatar").src =
+      character.avatar ||
+      avatarPlaceholder(
+        character.name
+      );
 
   }
 
@@ -796,16 +1040,11 @@ function openChat(characterId) {
 
 function renderChat() {
 
-  if (!currentCharacter) {
-    return;
-  }
-
-
   const container =
     $("chatMessages");
 
 
-  if (!container) {
+  if (!container || !currentCharacter) {
     return;
   }
 
@@ -814,60 +1053,35 @@ function renderChat() {
 
 
   const messages =
-    data.chats[currentCharacter.id] ||
-    [];
+    data.chats[
+      currentCharacter.id
+    ] || [];
 
-
-  /*
-    Если чат пустой, показываем приветствие,
-    но теперь СРАЗУ сохраняем его в историю.
-  */
 
   if (
     messages.length === 0 &&
     currentCharacter.greeting
   ) {
 
-    const greeting =
-      currentCharacter.greeting;
+    addMessage(
+      "bot",
+      currentCharacter.greeting
+    );
 
-
-    data.chats[currentCharacter.id] = [
-
-      {
-        role: "bot",
-        content: greeting,
-        time: Date.now()
-      }
-
-    ];
-
-
-    saveData();
-
+    return;
   }
 
 
-  const history =
-    data.chats[currentCharacter.id] || [];
+  messages.forEach(
+    message => {
 
+      addMessage(
+        message.role,
+        message.content
+      );
 
-  history.forEach(message => {
-
-    addMessage(
-      message.role,
-      message.content
-    );
-
-  });
-
-
-  requestAnimationFrame(() => {
-
-    container.scrollTop =
-      container.scrollHeight;
-
-  });
+    }
+  );
 
 }
 
@@ -887,7 +1101,9 @@ function addMessage(
 
 
   const message =
-    document.createElement("div");
+    document.createElement(
+      "div"
+    );
 
 
   message.className =
@@ -898,15 +1114,13 @@ function addMessage(
     text;
 
 
-  container.appendChild(message);
+  container.appendChild(
+    message
+  );
 
 
-  requestAnimationFrame(() => {
-
-    container.scrollTop =
-      container.scrollHeight;
-
-  });
+  container.scrollTop =
+    container.scrollHeight;
 
 }
 
@@ -981,7 +1195,9 @@ function sendMessage() {
   }
 
 
-  const message = {
+  data.chats[
+    currentCharacter.id
+  ].push({
 
     role: "user",
 
@@ -989,12 +1205,7 @@ function sendMessage() {
 
     time: Date.now()
 
-  };
-
-
-  data.chats[
-    currentCharacter.id
-  ].push(message);
+  });
 
 
   addMessage(
@@ -1004,7 +1215,6 @@ function sendMessage() {
 
 
   saveData();
-
 
   renderRecentChats();
 
@@ -1023,13 +1233,13 @@ $("profileButton")?.addEventListener(
 
 function renderProfile() {
 
-  const nameInput =
-    $("userName");
-
-  if (nameInput) {
-    nameInput.value =
-      data.user.name || "";
+  if (!$("userName")) {
+    return;
   }
+
+
+  $("userName").value =
+    data.user.name || "";
 
 
   if (data.user.avatar) {
@@ -1037,15 +1247,20 @@ function renderProfile() {
     $("profileAvatarPreview").src =
       data.user.avatar;
 
+
     $("profileAvatarPlaceholder")
-      .style.display = "none";
+      .style.display =
+      "none";
 
   } else {
 
-    $("profileAvatarPreview").src = "";
+    $("profileAvatarPreview").src =
+      "";
+
 
     $("profileAvatarPlaceholder")
-      .style.display = "";
+      .style.display =
+      "";
 
   }
 
@@ -1055,6 +1270,8 @@ function renderProfile() {
 }
 
 
+/* Avatar пользователя */
+
 $("userAvatarInput")
   ?.addEventListener(
     "change",
@@ -1063,7 +1280,22 @@ $("userAvatarInput")
       const file =
         event.target.files[0];
 
+
       if (!file) {
+        return;
+      }
+
+
+      if (
+        !file.type.startsWith(
+          "image/"
+        )
+      ) {
+
+        alert(
+          "Нужен файл изображения."
+        );
+
         return;
       }
 
@@ -1091,6 +1323,8 @@ $("userAvatarInput")
   );
 
 
+/* Сохранить профиль */
+
 $("saveProfile")
   ?.addEventListener(
     "click",
@@ -1114,33 +1348,37 @@ $("saveProfile")
 
 function updateUserAvatar() {
 
-  const avatar =
+  const image =
     $("userAvatar");
+
 
   const placeholder =
     $("defaultUserAvatar");
 
 
-  if (!avatar || !placeholder) {
+  if (!image || !placeholder) {
     return;
   }
 
 
   if (data.user.avatar) {
 
-    avatar.src =
+    image.src =
       data.user.avatar;
 
-    avatar.style.display =
+
+    image.style.display =
       "block";
+
 
     placeholder.style.display =
       "none";
 
   } else {
 
-    avatar.style.display =
+    image.style.display =
       "none";
+
 
     placeholder.style.display =
       "inline";
@@ -1151,7 +1389,7 @@ function updateUserAvatar() {
 
 
 /* =====================================================
-   TRACKS
+   TRACKS — UPLOAD
    ===================================================== */
 
 $("musicUpload")
@@ -1161,57 +1399,90 @@ $("musicUpload")
   );
 
 
-function handleMusicUpload(event) {
+async function handleMusicUpload(event) {
 
   const files =
     [...event.target.files];
 
 
-  files.forEach(file => {
+  if (!files.length) {
+    return;
+  }
 
-    if (!file.type.startsWith("audio/")) {
-      return;
+
+  for (const file of files) {
+
+    if (
+      !file.type.startsWith(
+        "audio/"
+      )
+    ) {
+
+      continue;
     }
 
 
-    const reader =
-      new FileReader();
+    try {
 
-
-    reader.onload = () => {
-
-      data.tracks.push({
+      const track = {
 
         id: makeId(),
 
         name: file.name,
 
-        data: reader.result
+        type:
+          file.type ||
+          "audio/mpeg",
 
-      });
+        blob: file,
+
+        createdAt:
+          Date.now()
+
+      };
 
 
-      saveData();
+      await saveTrackToDB(
+        track
+      );
 
-      renderTracks();
+    } catch (error) {
 
-    };
+      console.error(
+        "Fair music upload error:",
+        error
+      );
 
 
-    reader.readAsDataURL(file);
+      alert(
+        `Не удалось добавить «${file.name}».`
+      );
 
-  });
+    }
+
+  }
 
 
   event.target.value = "";
 
+
+  await renderTracks();
+
 }
 
 
-function renderTracks() {
+/* =====================================================
+   TRACKS — RENDER
+   ===================================================== */
+
+async function renderTracks() {
 
   const container =
     $("tracksList");
+
+
+  const empty =
+    $("emptyTracks");
 
 
   if (!container) {
@@ -1222,212 +1493,226 @@ function renderTracks() {
   container.innerHTML = "";
 
 
-  $("emptyTracks")
-    ?.classList.toggle(
+  let tracks = [];
+
+
+  try {
+
+    tracks =
+      await getAllTracksFromDB();
+
+  } catch (error) {
+
+    console.error(
+      "Fair tracks read error:",
+      error
+    );
+
+
+    if (empty) {
+      empty.classList.remove(
+        "hidden"
+      );
+    }
+
+    return;
+  }
+
+
+  if (empty) {
+
+    empty.classList.toggle(
       "hidden",
-      data.tracks.length > 0
-    );
-
-
-  data.tracks.forEach(track => {
-
-    const item =
-      document.createElement("div");
-
-
-    item.className =
-      "track-item";
-
-
-    item.innerHTML = `
-
-      <div class="track-icon">
-        ♪
-      </div>
-
-      <div class="track-info">
-
-        <div class="track-name">
-          ${escapeHTML(track.name)}
-        </div>
-
-        <audio
-          class="track-audio"
-          controls
-          src="${track.data}"
-        ></audio>
-
-      </div>
-
-    `;
-
-
-    container.appendChild(item);
-
-  });
-
-}
-
-
-/* =====================================================
-   THEME
-   ===================================================== */
-
-/*
-  Тема хранится отдельно от персонажей.
-  Сейчас есть:
-  - Fair Dark
-  - Fair Pink
-
-  Переключение происходит через •••.
-*/
-
-
-function getTheme() {
-
-  return (
-    localStorage.getItem(THEME_KEY) ||
-    "dark"
-  );
-
-}
-
-
-function applyTheme() {
-
-  const theme =
-    getTheme();
-
-
-  document.documentElement
-    .dataset.theme =
-    theme;
-
-
-  /*
-    Эти стили добавляются JS-ом,
-    поэтому не требуется отдельный
-    theme.css.
-  */
-
-  let themeStyle =
-    $("fairThemeStyle");
-
-
-  if (!themeStyle) {
-
-    themeStyle =
-      document.createElement("style");
-
-    themeStyle.id =
-      "fairThemeStyle";
-
-    document.head.appendChild(
-      themeStyle
+      tracks.length > 0
     );
 
   }
 
 
-  if (theme === "pink") {
+  tracks.forEach(
+    track => {
 
-    themeStyle.textContent = `
+      const item =
+        document.createElement(
+          "div"
+        );
 
-      :root[data-theme="pink"] {
-        background: #100811;
-        color: #fff7fc;
-      }
 
-      :root[data-theme="pink"] body {
-        background: #100811;
-      }
+      item.className =
+        "track-item";
 
-      :root[data-theme="pink"] .app {
-        background:
-          radial-gradient(
-            circle at top right,
-            rgba(255, 100, 205, 0.12),
-            transparent 38%
-          ),
-          #100811;
-      }
 
-      :root[data-theme="pink"] .topbar {
-        background:
-          rgba(16, 8, 17, 0.90);
-        border-bottom-color: #332033;
-      }
+      const icon =
+        document.createElement(
+          "div"
+        );
 
-      :root[data-theme="pink"] .bottom-nav {
-        background:
-          rgba(16, 8, 17, 0.94);
-        border-top-color: #332033;
-      }
 
-      :root[data-theme="pink"] .character-card:hover {
-        filter:
-          drop-shadow(
-            0 5px 18px
-            rgba(255, 100, 205, 0.14)
+      icon.className =
+        "track-icon";
+
+
+      icon.textContent =
+        "♪";
+
+
+      const info =
+        document.createElement(
+          "div"
+        );
+
+
+      info.className =
+        "track-info";
+
+
+      const name =
+        document.createElement(
+          "div"
+        );
+
+
+      name.className =
+        "track-name";
+
+
+      name.textContent =
+        track.name;
+
+
+      const audio =
+        document.createElement(
+          "audio"
+        );
+
+
+      audio.className =
+        "track-audio";
+
+
+      audio.controls =
+        true;
+
+
+      const blob =
+        track.blob;
+
+
+      if (blob) {
+
+        const url =
+          URL.createObjectURL(
+            blob
           );
+
+
+        audio.src =
+          url;
+
+
+        audio.addEventListener(
+          "ended",
+          () => {
+            URL.revokeObjectURL(
+              url
+            );
+          },
+          {
+            once: true
+          }
+        );
+
       }
 
-      :root[data-theme="pink"] .message.bot {
-        background: #211521;
-      }
 
-      :root[data-theme="pink"] .chat-header {
-        background:
-          rgba(16, 8, 17, 0.90);
-        border-bottom-color: #332033;
-      }
-
-      :root[data-theme="pink"] .chat-input-area {
-        background:
-          rgba(16, 8, 17, 0.96);
-      }
-
-      :root[data-theme="pink"] .chat-input-area textarea {
-        background: #180d19;
-        border-color: #3a2438;
-      }
-
-    `;
-
-  } else {
-
-    themeStyle.textContent = "";
-
-  }
-
-}
+      info.appendChild(
+        name
+      );
 
 
-function toggleTheme() {
-
-  const current =
-    getTheme();
-
-
-  const next =
-    current === "dark"
-      ? "pink"
-      : "dark";
+      info.appendChild(
+        audio
+      );
 
 
-  localStorage.setItem(
-    THEME_KEY,
-    next
-  );
+      const deleteButton =
+        document.createElement(
+          "button"
+        );
 
 
-  applyTheme();
+      deleteButton.className =
+        "track-delete";
 
 
-  alert(
-    next === "pink"
-      ? "Тема Fair Pink включена 🌸"
-      : "Тёмная тема Fair включена."
+      deleteButton.textContent =
+        "×";
+
+
+      deleteButton.title =
+        "Удалить";
+
+
+      deleteButton.addEventListener(
+        "click",
+        async event => {
+
+          event.stopPropagation();
+
+
+          const confirmed =
+            confirm(
+              `Удалить «${track.name}»?`
+            );
+
+
+          if (!confirmed) {
+            return;
+          }
+
+
+          try {
+
+            await deleteTrackFromDB(
+              track.id
+            );
+
+
+            await renderTracks();
+
+          } catch (error) {
+
+            console.error(
+              "Fair track delete error:",
+              error
+            );
+
+          }
+
+        }
+      );
+
+
+      item.appendChild(
+        icon
+      );
+
+
+      item.appendChild(
+        info
+      );
+
+
+      item.appendChild(
+        deleteButton
+      );
+
+
+      container.appendChild(
+        item
+      );
+
+    }
   );
 
 }
@@ -1441,7 +1726,9 @@ $("moreButton")?.addEventListener(
   "click",
   () => {
 
-    toggleTheme();
+    alert(
+      "Настройки Fair появятся здесь."
+    );
 
   }
 );
@@ -1451,113 +1738,12 @@ $("chatMore")?.addEventListener(
   "click",
   () => {
 
-    if (!currentCharacter) {
-      return;
-    }
-
-
     alert(
-      `Персонаж: ${currentCharacter.name}\n\n` +
-      `Здесь позже будут настройки персонажа.`
+      "Настройки персонажа появятся здесь."
     );
 
   }
 );
-
-
-/* =====================================================
-   CHAT UI FIX
-   ===================================================== */
-
-/*
-  CSS дополнительно страхуем прямо из JS.
-
-  Это решает ситуацию, когда:
-  - поле ввода исчезает;
-  - нижняя навигация закрывает его;
-  - чат занимает неправильную высоту;
-  - аватар получает нулевой размер.
-*/
-
-(function installChatFix() {
-
-  const style =
-    document.createElement("style");
-
-  style.id =
-    "fairChatFix";
-
-  style.textContent = `
-
-    .chat-page {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100dvh !important;
-      min-height: 100dvh !important;
-      z-index: 100 !important;
-      background: #08070c;
-    }
-
-    .chat-page.hidden {
-      display: none !important;
-    }
-
-    .chat-header {
-      flex: 0 0 66px !important;
-      min-height: 66px !important;
-      position: relative;
-      z-index: 2;
-    }
-
-    .chat-character img {
-      display: block !important;
-      width: 41px !important;
-      height: 41px !important;
-      min-width: 41px !important;
-      min-height: 41px !important;
-      flex: 0 0 41px !important;
-    }
-
-    .chat-messages {
-      min-height: 0 !important;
-      flex: 1 1 auto !important;
-      overflow-y: auto !important;
-    }
-
-    .chat-input-area {
-      position: relative !important;
-      z-index: 5 !important;
-      flex: 0 0 auto !important;
-      min-height: 66px !important;
-    }
-
-    .chat-input-area textarea {
-      min-height: 46px !important;
-      display: block !important;
-    }
-
-    .send-button {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-
-    .bottom-nav.chat-mode {
-      display: none !important;
-    }
-
-    .topbar.chat-mode {
-      display: none !important;
-    }
-
-  `;
-
-  document.head.appendChild(style);
-
-})();
 
 
 /* =====================================================
@@ -1571,14 +1757,14 @@ const matrix =
 if (matrix) {
 
   const ctx =
-    matrix.getContext("2d");
+    matrix.getContext(
+      "2d"
+    );
 
 
   let width = 0;
   let height = 0;
-
   let columns = 0;
-
   let drops = [];
 
 
@@ -1658,6 +1844,7 @@ if (matrix) {
     ctx.fillStyle =
       "rgba(6, 5, 9, 0.055)";
 
+
     ctx.fillRect(
       0,
       0,
@@ -1712,7 +1899,9 @@ if (matrix) {
       }
 
 
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur =
+        8;
+
 
       ctx.shadowColor =
         "rgba(255,100,200,0.65)";
@@ -1725,14 +1914,16 @@ if (matrix) {
       );
 
 
-      ctx.shadowBlur = 0;
+      ctx.shadowBlur =
+        0;
 
 
       /*
         Медленное движение.
       */
 
-      drops[i] += 0.32;
+      drops[i] +=
+        0.32;
 
 
       if (
@@ -1763,7 +1954,5 @@ if (matrix) {
 /* =====================================================
    INITIAL STATE
    ===================================================== */
-
-applyTheme();
 
 updateUserAvatar();
