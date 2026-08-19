@@ -220,6 +220,60 @@ button {
 
 
 /* =====================================================
+   РОЗОВЫЙ ОГОНЁК НА WELCOME
+   ===================================================== */
+
+.welcome-spark {
+  display: flex;
+
+  justify-content: center;
+
+  margin-bottom: 6px;
+
+  filter:
+    drop-shadow(
+      0 0 18px
+      rgba(255, 130, 205, 0.55)
+    );
+
+  animation:
+    sparkPulse 3s ease-in-out infinite;
+}
+
+.welcome-spark svg {
+  display: block;
+}
+
+@keyframes sparkPulse {
+
+  0%,
+  100% {
+    transform:
+      scale(1)
+      rotate(0deg);
+
+    filter:
+      drop-shadow(
+        0 0 14px
+        rgba(255, 130, 205, 0.45)
+      );
+  }
+
+  50% {
+    transform:
+      scale(1.08)
+      rotate(-3deg);
+
+    filter:
+      drop-shadow(
+        0 0 26px
+        rgba(255, 130, 205, 0.75)
+      );
+  }
+}
+
+
+/* =====================================================
    APP
    ===================================================== */
 
@@ -305,6 +359,29 @@ button {
   height: 100%;
 
   object-fit: cover;
+}
+
+
+/* =====================================================
+   ЛУНА ВМЕСТО СТАНДАРТНОГО ЧЕЛОВЕЧКА
+   ===================================================== */
+
+#defaultUserAvatar {
+  font-size: 0;
+
+  width: 22px;
+  height: 22px;
+
+  display: inline-block;
+
+  background-repeat: no-repeat;
+
+  background-position: center;
+
+  background-size: contain;
+
+  background-image:
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22"><path d="M14.5 2C10 3.2 7 7.2 7 11.5C7 16.4 11.1 20.5 16 20.5C17.9 20.5 19.6 19.9 21 18.9C19.1 19.6 17 19.5 15.2 18.5C11.8 16.6 10.4 12.4 12 8.8C12.9 6.8 14.6 5.3 16.6 4.6C15.9 3.6 15.2 2.7 14.5 2Z" fill="%23ff9bd8"/></svg>');
 }
 
 .more-button {
@@ -803,6 +880,35 @@ button {
   max-width: 230px;
 }
 
+.track-delete {
+  width: 36px;
+  height: 36px;
+
+  flex: 0 0 auto;
+
+  border: 0;
+
+  border-radius: 10px;
+
+  background: #19151c;
+
+  color: #9b8495;
+
+  font-size: 22px;
+
+  line-height: 1;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.track-delete:hover {
+  background: #2a1825;
+
+  color: #ff9bd8;
+}
+
 
 /* =====================================================
    PROFILE
@@ -854,25 +960,44 @@ button {
   object-fit: cover;
 }
 
+#profileAvatarPlaceholder {
+  color: #ff9bd8;
+}
+
 
 /* =====================================================
    CHAT
    ===================================================== */
 
 .chat-page {
-  height: 100vh;
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 40;
+
+  width: 100%;
+  height: 100dvh;
+
+  min-height: 0;
 
   display: flex;
 
   flex-direction: column;
 
+  overflow: hidden;
+
   background: #08070c;
 }
 
 .chat-header {
-  height: 66px;
+  position: relative;
 
-  flex: 0 0 auto;
+  z-index: 42;
+
+  flex: 0 0 66px;
+
+  width: 100%;
 
   display: flex;
 
@@ -882,16 +1007,18 @@ button {
 
   padding: 0 14px;
 
+  background:
+    rgba(8, 7, 12, 0.96);
+
   border-bottom:
     1px solid #1b1820;
-
-  background:
-    rgba(8, 7, 12, 0.88);
 
   backdrop-filter: blur(16px);
 }
 
 .chat-character {
+  min-width: 0;
+
   flex: 1;
 
   display: flex;
@@ -902,8 +1029,12 @@ button {
 }
 
 .chat-character img {
+  display: block;
+
   width: 41px;
   height: 41px;
+
+  flex: 0 0 41px;
 
   border-radius: 50%;
 
@@ -913,32 +1044,27 @@ button {
 }
 
 .chat-character div {
-  display: flex;
-
-  flex-direction: column;
-}
-
-.chat-character span {
-  margin-top: 2px;
-
-  color: #77737e;
-
-  font-size: 11px;
-}
-
-.chat-messages {
-  flex: 1;
-
-  overflow-y: auto;
-
-  padding: 20px;
+  min-width: 0;
 
   display: flex;
 
   flex-direction: column;
-
-  gap: 10px;
 }
+
+#chatName {
+  display: block;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+}
+
+
+/* =====================================================
+   БАНТИК НА СООБЩЕНИЯХ БОТА
+   ===================================================== */
 
 .message {
   max-width:
@@ -970,46 +1096,130 @@ button {
 }
 
 .message.bot {
+  position: relative;
+
   align-self: flex-start;
 
   background: #17131a;
 }
 
-.chat-input-area {
-  flex: 0 0 auto;
+.message.bot::before {
+  content: "";
+
+  position: absolute;
+
+  top: -6px;
+  left: -6px;
+
+  width: 16px;
+  height: 16px;
+
+  background-repeat: no-repeat;
+
+  background-size: contain;
+
+  background-image:
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14"><path d="M7 7C5.5 5.5 3 4.5 1 5C1.5 6.5 3 8 5 8L7 7Z" fill="%23ffb3de"/><path d="M7 7C8.5 5.5 11 4.5 13 5C12.5 6.5 11 8 9 8L7 7Z" fill="%23ff9bd8"/><circle cx="7" cy="7" r="1.4" fill="%23fff0f8"/></svg>');
+
+  pointer-events: none;
+}
+
+
+/* =====================================================
+   CHAT MESSAGES
+   ===================================================== */
+
+.chat-messages {
+  position: relative;
+
+  z-index: 40;
+
+  flex: 1 1 auto;
+
+  min-height: 0;
+
+  width: 100%;
+
+  overflow-y: auto;
+
+  overflow-x: hidden;
+
+  padding:
+    20px 14px;
 
   display: flex;
+
+  flex-direction: column;
+
+  gap: 10px;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+
+/* =====================================================
+   CHAT INPUT
+   ===================================================== */
+
+.chat-input-area {
+  position: relative;
+
+  z-index: 43;
+
+  flex: 0 0 auto;
+
+  width: 100%;
+
+  display: flex;
+
+  align-items: flex-end;
 
   gap: 8px;
 
   padding:
-    10px 14px 15px;
+    10px 14px
+    max(15px, env(safe-area-inset-bottom));
 
   background:
-    rgba(8, 7, 12, 0.94);
+    rgba(8, 7, 12, 0.98);
 
-  backdrop-filter: blur(12px);
+  border-top:
+    1px solid #1b1820;
+
+  backdrop-filter:
+    blur(16px);
 }
 
 .chat-input-area textarea {
-  flex: 1;
+  display: block;
+
+  min-width: 0;
+  min-height: 46px;
 
   max-height: 150px;
+
+  flex: 1 1 auto;
 
   resize: none;
 
   padding: 12px;
+
+  outline: none;
 
   border:
     1px solid #28232c;
 
   border-radius: 13px;
 
-  outline: none;
-
   background: #110f14;
 
   color: white;
+
+  pointer-events: auto;
+
+  -webkit-user-select: text;
+
+  user-select: text;
 }
 
 .chat-input-area textarea:focus {
@@ -1017,10 +1227,19 @@ button {
 }
 
 .send-button {
+  position: relative;
+
+  z-index: 44;
+
   width: 46px;
   height: 46px;
 
-  flex: 0 0 auto;
+  flex: 0 0 46px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
 
   border: 0;
 
@@ -1032,12 +1251,37 @@ button {
 
   font-size: 20px;
 
+  pointer-events: auto;
+
   transition:
     transform 0.15s ease;
 }
 
 .send-button:hover {
   transform: translateY(-1px);
+}
+
+
+/* =====================================================
+   CHAT BACK / MORE
+   ===================================================== */
+
+.chat-header .back-button,
+.chat-header .more-button {
+  position: relative;
+
+  z-index: 44;
+
+  flex: 0 0 auto;
+}
+
+
+/* =====================================================
+   В ЧАТЕ НЕТ НИЖНЕЙ НАВИГАЦИИ
+   ===================================================== */
+
+body:has(.chat-page:not(.hidden)) .bottom-nav {
+  display: none;
 }
 
 
@@ -1072,6 +1316,9 @@ button {
     1px solid #1b1820;
 
   backdrop-filter: blur(16px);
+
+  padding-bottom:
+    env(safe-area-inset-bottom);
 }
 
 .nav-button,
@@ -1204,6 +1451,24 @@ button {
       14px 12px;
   }
 
+  .chat-header {
+    flex-basis: 60px;
+
+    height: 60px;
+  }
+
+  .chat-character img {
+    width: 39px;
+    height: 39px;
+
+    flex-basis: 39px;
+  }
+
+  .chat-input-area {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
 }
 
 
@@ -1213,7 +1478,8 @@ button {
 
 @media (prefers-reduced-motion: reduce) {
 
-  .welcome-logo {
+  .welcome-logo,
+  .welcome-spark {
     animation: none;
   }
 
@@ -1224,269 +1490,6 @@ button {
   .create-nav,
   .welcome-main-button {
     transition: none;
-  }
-
-}
-
-/* =====================================================
-   FAIR — CHAT MOBILE FIX
-   ===================================================== */
-
-.chat-page {
-  position: fixed;
-  inset: 0;
-
-  z-index: 40;
-
-  width: 100%;
-  height: 100dvh;
-  min-height: 0;
-
-  display: flex;
-  flex-direction: column;
-
-  overflow: hidden;
-
-  background: #08070c;
-}
-
-
-/* ------------------------------
-   CHAT HEADER
-   ------------------------------ */
-
-.chat-header {
-  position: relative;
-  z-index: 42;
-
-  flex: 0 0 66px;
-
-  width: 100%;
-
-  display: flex;
-  align-items: center;
-
-  padding:
-    0 14px;
-
-  background:
-    rgba(8, 7, 12, 0.96);
-
-  border-bottom:
-    1px solid #1b1820;
-}
-
-
-/* Аватар персонажа */
-
-.chat-character {
-  min-width: 0;
-  flex: 1;
-
-  display: flex;
-  align-items: center;
-
-  gap: 10px;
-}
-
-.chat-character img {
-  display: block;
-
-  width: 41px;
-  height: 41px;
-
-  flex: 0 0 41px;
-
-  border-radius: 50%;
-
-  object-fit: cover;
-
-  background: #17131a;
-}
-
-.chat-character div {
-  min-width: 0;
-
-  display: flex;
-  flex-direction: column;
-}
-
-#chatName {
-  display: block;
-
-  overflow: hidden;
-
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-
-/* ------------------------------
-   MESSAGES
-   ------------------------------ */
-
-.chat-messages {
-  position: relative;
-  z-index: 40;
-
-  flex: 1 1 auto;
-
-  min-height: 0;
-
-  width: 100%;
-
-  overflow-y: auto;
-  overflow-x: hidden;
-
-  padding:
-    20px 14px;
-
-  display: flex;
-  flex-direction: column;
-
-  gap: 10px;
-
-  -webkit-overflow-scrolling: touch;
-}
-
-
-/* ------------------------------
-   INPUT
-   ------------------------------ */
-
-.chat-input-area {
-  position: relative;
-  z-index: 43;
-
-  flex: 0 0 auto;
-
-  width: 100%;
-
-  display: flex;
-  align-items: flex-end;
-
-  gap: 8px;
-
-  padding:
-    10px 14px
-    max(15px, env(safe-area-inset-bottom));
-
-  background:
-    rgba(8, 7, 12, 0.98);
-
-  border-top:
-    1px solid #1b1820;
-
-  backdrop-filter:
-    blur(16px);
-}
-
-.chat-input-area textarea {
-  display: block;
-
-  min-width: 0;
-  min-height: 46px;
-
-  max-height: 150px;
-
-  flex: 1 1 auto;
-
-  resize: none;
-
-  padding: 12px;
-
-  outline: none;
-
-  border:
-    1px solid #28232c;
-
-  border-radius: 13px;
-
-  background: #110f14;
-
-  color: white;
-
-  pointer-events: auto;
-
-  -webkit-user-select: text;
-  user-select: text;
-}
-
-.chat-input-area textarea:focus {
-  border-color: #b66b9e;
-}
-
-.send-button {
-  position: relative;
-  z-index: 44;
-
-  width: 46px;
-  height: 46px;
-
-  flex: 0 0 46px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border: 0;
-  border-radius: 13px;
-
-  background: #fff;
-  color: #151016;
-
-  pointer-events: auto;
-}
-
-
-/* ------------------------------
-   CHAT BACK / MORE
-   ------------------------------ */
-
-.chat-header .back-button,
-.chat-header .more-button {
-  position: relative;
-  z-index: 44;
-
-  flex: 0 0 auto;
-}
-
-
-/* ------------------------------
-   НЕ ПОКАЗЫВАЕМ НИЖНЮЮ
-   НАВИГАЦИЮ В ЧАТЕ
-   ------------------------------ */
-
-body:has(.chat-page:not(.hidden)) .bottom-nav {
-  display: none;
-}
-
-
-/* ------------------------------
-   MOBILE
-   ------------------------------ */
-
-@media (max-width: 600px) {
-
-  .chat-header {
-    flex-basis: 60px;
-    height: 60px;
-  }
-
-  .chat-character img {
-    width: 39px;
-    height: 39px;
-    flex-basis: 39px;
-  }
-
-  .chat-messages {
-    padding:
-      14px 12px;
-  }
-
-  .chat-input-area {
-    padding-left: 10px;
-    padding-right: 10px;
   }
 
 }
