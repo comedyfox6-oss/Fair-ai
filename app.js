@@ -8,16 +8,8 @@ const DB_NAME = "fair_music_db";
 const DB_VERSION = 1;
 const TRACK_STORE = "tracks";
 
-/*
-   Cloudflare Worker.
-
-   URL собран из частей специально, чтобы сам адрес
-   не мешал другим инструментам/редакторам.
-*/
 const AI_WORKER_URL =
-  "https://" +
-  "summer-heart-97c3.comedyfox6.workers.dev/";
-
+  "https://summer-heart-97c3.comedyfox6.workers.dev/";
 
 const defaultData = {
   user: {
@@ -1859,14 +1851,6 @@ async function sendMessage() {
       );
 
 
-    /*
-      Отправляем сразу оба варианта
-      названий полей, чтобы Worker,
-      который сейчас ожидает character/messages/message
-      или character/userPersona/history/userMessage,
-      получил нужные данные.
-    */
-
     const payload = {
 
       character: {
@@ -2282,11 +2266,6 @@ function isProbablyAudioFile(file) {
 
   }
 
-
-  /*
-    iOS иногда отдаёт пустой MIME.
-    Поэтому проверяем расширение.
-  */
 
   const name =
     String(
