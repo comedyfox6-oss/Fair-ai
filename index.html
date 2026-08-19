@@ -2,6 +2,7 @@
 <html lang="ru">
 
 <head>
+
   <meta charset="UTF-8">
 
   <meta
@@ -31,8 +32,9 @@
 
   <title>Fair</title>
 
+
   <!-- =====================================================
-       FAIR ICON — встроенная SVG-аватарка приложения
+       FAIR ICON
        ===================================================== -->
 
   <link
@@ -50,9 +52,12 @@
     rel="stylesheet"
     href="style.css"
   >
+
 </head>
 
+
 <body>
+
 
   <!-- =====================================================
        WELCOME / MATRIX
@@ -67,15 +72,71 @@
 
     <div class="matrix-glow"></div>
 
+
     <div class="welcome-content">
+
+
+      <!-- РОЗОВЫЙ ОГОНЁК FAIR -->
+
+      <div class="welcome-spark">
+
+        <svg
+          width="46"
+          height="46"
+          viewBox="0 0 46 46"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+
+          <path
+            d="M23 2C23 14 30 17 30 26C30 33.2 27 40 20 40C13.8 40 9 34.8 9 28C9 23 12 19 12 19C12 24 15 27 15 27C13 21 17 15 23 2Z"
+            fill="url(#sparkGradient)"
+          />
+
+          <defs>
+
+            <linearGradient
+              id="sparkGradient"
+              x1="9"
+              y1="2"
+              x2="30"
+              y2="40"
+              gradientUnits="userSpaceOnUse"
+            >
+
+              <stop
+                offset="0"
+                stop-color="#ffffff"
+              />
+
+              <stop
+                offset="0.5"
+                stop-color="#ffd4ef"
+              />
+
+              <stop
+                offset="1"
+                stop-color="#ff6bc4"
+              />
+
+            </linearGradient>
+
+          </defs>
+
+        </svg>
+
+      </div>
+
 
       <div class="welcome-logo">
         Fair
       </div>
 
+
       <p class="welcome-subtitle">
         your characters. your world.
       </p>
+
 
       <div class="welcome-buttons">
 
@@ -94,6 +155,7 @@
   </section>
 
 
+
   <!-- =====================================================
        APPLICATION
        ===================================================== -->
@@ -102,6 +164,7 @@
     id="app"
     class="app hidden"
   >
+
 
     <!-- =================================================
          TOP BAR
@@ -112,6 +175,7 @@
       <div class="brand">
         Fair
       </div>
+
 
       <div class="topbar-right">
 
@@ -133,6 +197,7 @@
 
         </button>
 
+
         <button
           id="moreButton"
           class="more-button"
@@ -144,6 +209,7 @@
       </div>
 
     </header>
+
 
 
     <!-- =================================================
@@ -165,12 +231,14 @@
 
         </div>
 
+
         <div
           id="recentChats"
           class="recent-chats"
         ></div>
 
       </section>
+
 
 
       <section class="characters-section">
@@ -203,6 +271,7 @@
             Здесь пока пусто
           </p>
 
+
           <button
             id="emptyCreateButton"
             class="small-button"
@@ -218,8 +287,9 @@
     </main>
 
 
+
     <!-- =================================================
-         CREATE
+         CREATE / EDIT CHARACTER
          ================================================= -->
 
     <main
@@ -237,6 +307,7 @@
           ←
         </button>
 
+
         <div>
 
           <h1>
@@ -253,6 +324,9 @@
 
 
       <div class="create-form">
+
+
+        <!-- AVATAR -->
 
         <div class="avatar-picker">
 
@@ -275,6 +349,7 @@
 
           </label>
 
+
           <input
             id="characterAvatar"
             type="file"
@@ -282,12 +357,16 @@
             hidden
           >
 
+
           <span>
             Добавить аватар
           </span>
 
         </div>
 
+
+
+        <!-- NAME -->
 
         <label>
 
@@ -301,6 +380,9 @@
 
         </label>
 
+
+
+        <!-- GENDER -->
 
         <label>
 
@@ -329,6 +411,9 @@
         </label>
 
 
+
+        <!-- DESCRIPTION -->
+
         <label>
 
           Описание
@@ -340,6 +425,9 @@
 
         </label>
 
+
+
+        <!-- PERSONALITY -->
 
         <label>
 
@@ -353,6 +441,9 @@
         </label>
 
 
+
+        <!-- GREETING -->
+
         <label>
 
           Приветственное сообщение
@@ -364,6 +455,9 @@
 
         </label>
 
+
+
+        <!-- USER PERSONA -->
 
         <label>
 
@@ -377,6 +471,9 @@
         </label>
 
 
+
+        <!-- INSTRUCTIONS -->
+
         <label>
 
           Дополнительные сведения
@@ -387,6 +484,7 @@
           ></textarea>
 
         </label>
+
 
 
         <button
@@ -400,6 +498,7 @@
       </div>
 
     </main>
+
 
 
     <!-- =================================================
@@ -437,11 +536,11 @@
           ＋ Добавить музыку
         </label>
 
+
         <!--
-          iOS-friendly:
-          multiple временно убран.
-          Сначала добиваемся стабильного выбора
-          одного файла из приложения «Файлы».
+          iOS FIX:
+          multiple специально убран.
+          Сначала выбираем один файл.
         -->
 
         <input
@@ -478,6 +577,7 @@
     </main>
 
 
+
     <!-- =================================================
          PROFILE
          ================================================= -->
@@ -497,6 +597,7 @@
           ←
         </button>
 
+
         <div>
 
           <h1>
@@ -513,6 +614,7 @@
 
 
       <div class="profile-card">
+
 
         <label
           for="userAvatarInput"
@@ -532,6 +634,7 @@
           </span>
 
         </label>
+
 
         <input
           id="userAvatarInput"
@@ -567,6 +670,7 @@
     </main>
 
 
+
     <!-- =================================================
          CHAT
          ================================================= -->
@@ -576,7 +680,9 @@
       class="chat-page hidden"
     >
 
+
       <header class="chat-header">
+
 
         <button
           id="chatBack"
@@ -595,9 +701,12 @@
             alt=""
           >
 
+
           <div>
 
-            <strong id="chatName"></strong>
+            <strong
+              id="chatName"
+            ></strong>
 
           </div>
 
@@ -615,10 +724,12 @@
       </header>
 
 
+
       <div
         id="chatMessages"
         class="chat-messages"
       ></div>
+
 
 
       <div class="chat-input-area">
@@ -628,6 +739,7 @@
           rows="1"
           placeholder="Напиши сообщение..."
         ></textarea>
+
 
         <button
           id="sendMessage"
@@ -642,11 +754,13 @@
     </main>
 
 
+
     <!-- =================================================
-         BOTTOM NAV
+         BOTTOM NAVIGATION
          ================================================= -->
 
     <nav class="bottom-nav">
+
 
       <button
         class="nav-button active"
@@ -700,6 +814,11 @@
 
   </section>
 
+
+
+  <!-- =====================================================
+       APP.JS
+       ===================================================== -->
 
   <script src="app.js"></script>
 
