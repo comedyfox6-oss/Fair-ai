@@ -1,81 +1,56 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
-
   <meta charset="UTF-8">
-
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
   >
-
   <meta
     name="theme-color"
     content="#09070d"
   >
-
   <meta
     name="apple-mobile-web-app-capable"
     content="yes"
   >
-
   <meta
     name="apple-mobile-web-app-status-bar-style"
     content="black-translucent"
   >
-
   <meta
     name="apple-mobile-web-app-title"
     content="Fair"
   >
-
-  <!-- FAIR ICON -->
+  <!-- ИКОНКА -->
   <link
     rel="icon"
-    type="image/png"
-    href="icon.png"
+    type="image/jpeg"
+    href="IMG_6598.jpeg"
   >
-
   <link
     rel="apple-touch-icon"
-    href="icon.png"
+    href="IMG_6598.jpeg"
   >
-
   <title>Fair</title>
-
-  <!-- STYLE -->
+  <!-- СТИЛИ -->
   <link
     rel="stylesheet"
     href="style.css"
   >
-
 </head>
-
-
 <body>
-
-
   <!-- =====================================================
        WELCOME
        ===================================================== -->
-
   <section
     id="welcome"
     class="screen welcome-screen"
   >
-
     <canvas id="matrix"></canvas>
-
     <div class="matrix-glow"></div>
-
-
     <div class="welcome-content">
-
-      <!-- РОЗОВЫЙ ОГОНЁК -->
-
       <div class="welcome-spark">
-
         <svg
           width="46"
           height="46"
@@ -83,9 +58,7 @@
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-
           <defs>
-
             <linearGradient
               id="sparkGradient"
               x1="9"
@@ -94,49 +67,33 @@
               y2="40"
               gradientUnits="userSpaceOnUse"
             >
-
               <stop
                 offset="0"
                 stop-color="#ffffff"
               />
-
               <stop
                 offset="0.5"
                 stop-color="#ffd4ef"
               />
-
               <stop
                 offset="1"
                 stop-color="#ff6bc4"
               />
-
             </linearGradient>
-
           </defs>
-
-
           <path
             d="M23 2C23 14 30 17 30 26C30 33.2 27 40 20 40C13.8 40 9 34.8 9 28C9 23 12 19 12 19C12 24 15 27 15 27C13 21 17 15 23 2Z"
             fill="url(#sparkGradient)"
           />
-
         </svg>
-
       </div>
-
-
       <div class="welcome-logo">
         Fair
       </div>
-
-
       <p class="welcome-subtitle">
         your characters. your world.
       </p>
-
-
       <div class="welcome-buttons">
-
         <button
           id="guestLogin"
           class="welcome-secondary-button"
@@ -144,57 +101,36 @@
         >
           Войти без аккаунта
         </button>
-
       </div>
-
     </div>
-
   </section>
-
-
-
   <!-- =====================================================
        APPLICATION
        ===================================================== -->
-
   <section
     id="app"
     class="app hidden"
   >
-
-
-    <!-- =================================================
-         TOP BAR
-         ================================================= -->
-
+    <!-- TOP BAR -->
     <header class="topbar">
-
       <div class="brand">
         Fair
       </div>
-
-
       <div class="topbar-right">
-
         <button
           id="profileButton"
           class="user-avatar-button"
           type="button"
         >
-
           <img
             id="userAvatar"
             src=""
             alt=""
           >
-
           <span id="defaultUserAvatar">
             👤
           </span>
-
         </button>
-
-
         <button
           id="moreButton"
           class="more-button"
@@ -202,73 +138,42 @@
         >
           •••
         </button>
-
       </div>
-
     </header>
-
-
-
     <!-- =================================================
          HOME
          ================================================= -->
-
     <main
       id="homePage"
       class="page"
     >
-
       <section>
-
         <div class="section-heading">
-
-          <h2>
-            Recent chats
-          </h2>
-
+          <h2>Recent chats</h2>
         </div>
-
-
         <div
           id="recentChats"
           class="recent-chats"
         ></div>
-
       </section>
-
-
-
       <section class="characters-section">
-
         <div class="section-heading">
-
-          <h2>
-            Characters
-          </h2>
-
+          <h2>Characters</h2>
         </div>
-
-
         <div
           id="charactersGrid"
           class="characters-grid"
         ></div>
-
-
         <div
           id="emptyCharacters"
           class="empty-state"
         >
-
           <div class="empty-plus">
             ＋
           </div>
-
           <p>
             Здесь пока пусто
           </p>
-
-
           <button
             id="emptyCreateButton"
             class="small-button"
@@ -276,26 +181,17 @@
           >
             Создать персонажа
           </button>
-
         </div>
-
       </section>
-
     </main>
-
-
-
     <!-- =================================================
-         CREATE / EDIT CHARACTER
+         CREATE CHARACTER
          ================================================= -->
-
     <main
       id="createPage"
       class="page hidden"
     >
-
       <div class="page-heading">
-
         <button
           class="back-button"
           data-page="home"
@@ -303,171 +199,108 @@
         >
           ←
         </button>
-
-
         <div>
-
           <h1>
             Создать персонажа
           </h1>
-
           <p>
             Сделай его своим.
           </p>
-
         </div>
-
       </div>
-
-
       <div class="create-form">
-
-
+        <!-- AVATAR -->
         <div class="avatar-picker">
-
           <label
             for="characterAvatar"
             class="character-avatar-picker"
           >
-
             <img
               id="characterAvatarPreview"
               src=""
               alt=""
             >
-
-            <span
-              id="characterAvatarPlaceholder"
-            >
+            <span id="characterAvatarPlaceholder">
               ＋
             </span>
-
           </label>
-
-
           <input
             id="characterAvatar"
             type="file"
             accept="image/*"
             hidden
           >
-
-
           <span>
             Добавить аватар
           </span>
-
         </div>
-
-
-
+        <!-- NAME -->
         <label>
-
           Имя
-
           <input
             id="characterName"
             type="text"
             placeholder="Например, Дэмиан"
           >
-
         </label>
-
-
-
+        <!-- GENDER -->
         <label>
-
           Пол
-
           <select id="characterGender">
-
             <option value="">
               Не указан
             </option>
-
             <option value="male">
               Мужской
             </option>
-
             <option value="female">
               Женский
             </option>
-
             <option value="other">
               Другой
             </option>
-
           </select>
-
         </label>
-
-
-
+        <!-- DESCRIPTION -->
         <label>
-
           Описание
-
           <textarea
             id="characterDescription"
             placeholder="Кто этот персонаж?"
           ></textarea>
-
         </label>
-
-
-
+        <!-- PERSONALITY -->
         <label>
-
           Характер
-
           <textarea
             id="characterPersonality"
             placeholder="Как он говорит, думает и ведёт себя?"
           ></textarea>
-
         </label>
-
-
-
+        <!-- GREETING -->
         <label>
-
           Приветственное сообщение
-
           <textarea
             id="characterGreeting"
             placeholder="Что персонаж скажет первым?"
           ></textarea>
-
         </label>
-
-
-
+        <!-- USER PERSONA -->
         <label>
-
           Твоя persona
-
           <textarea
             id="userPersona"
             placeholder="Кем ты являешься для этого персонажа?"
           ></textarea>
-
         </label>
-
-
-
+        <!-- INSTRUCTIONS -->
         <label>
-
           Дополнительные сведения
-
           <textarea
             id="characterInstructions"
             placeholder="Всё остальное, что персонажу нужно знать..."
           ></textarea>
-
         </label>
-
-
-
         <button
           id="createCharacterButton"
           class="primary-button"
@@ -475,95 +308,63 @@
         >
           Создать персонажа
         </button>
-
       </div>
-
     </main>
-
-
-
     <!-- =================================================
          TRACKS
          ================================================= -->
-
     <main
       id="tracksPage"
       class="page hidden"
     >
-
       <div class="page-heading">
-
         <div>
-
           <h1>
             Tracks
           </h1>
-
           <p>
             Твоя музыка.
           </p>
-
         </div>
-
       </div>
-
-
       <div class="music-actions">
-
         <label
           for="musicUpload"
           class="music-upload-button"
         >
           ＋ Добавить музыку
         </label>
-
-
         <input
           id="musicUpload"
           type="file"
           accept=".mp3,.m4a,.wav,.aac,.flac,.ogg,audio/*"
           hidden
         >
-
       </div>
-
-
       <div
         id="tracksList"
         class="tracks-list"
       ></div>
-
-
       <div
         id="emptyTracks"
         class="empty-state"
       >
-
         <div class="empty-plus">
           ♪
         </div>
-
         <p>
           Здесь пока нет музыки
         </p>
-
       </div>
-
     </main>
-
-
-
     <!-- =================================================
          PROFILE
          ================================================= -->
-
     <main
       id="profilePage"
       class="page hidden"
     >
-
       <div class="page-heading">
-
         <button
           class="back-button"
           data-page="home"
@@ -571,67 +372,43 @@
         >
           ←
         </button>
-
-
         <div>
-
           <h1>
             Профиль
           </h1>
-
           <p>
             Профиль и настройки
           </p>
-
         </div>
-
       </div>
-
-
       <div class="profile-card">
-
-
         <label
           for="userAvatarInput"
           class="profile-avatar"
         >
-
           <img
             id="profileAvatarPreview"
             src=""
             alt=""
           >
-
-          <span
-            id="profileAvatarPlaceholder"
-          >
+          <span id="profileAvatarPlaceholder">
             👤
           </span>
-
         </label>
-
-
         <input
           id="userAvatarInput"
           type="file"
           accept="image/*"
           hidden
         >
-
-
         <label>
-
           Имя
-
           <input
             id="userName"
             type="text"
             placeholder="Твоё имя"
           >
-
         </label>
-
-
         <button
           id="saveProfile"
           class="primary-button"
@@ -639,26 +416,16 @@
         >
           Сохранить
         </button>
-
       </div>
-
     </main>
-
-
-
     <!-- =================================================
          CHAT
          ================================================= -->
-
     <main
       id="chatPage"
       class="chat-page hidden"
     >
-
-
       <header class="chat-header">
-
-
         <button
           id="chatBack"
           class="back-button"
@@ -666,26 +433,16 @@
         >
           ←
         </button>
-
-
         <div class="chat-character">
-
           <img
             id="chatAvatar"
             src=""
             alt=""
           >
-
-
           <div>
-
             <strong id="chatName"></strong>
-
           </div>
-
         </div>
-
-
         <button
           id="chatMore"
           class="more-button"
@@ -693,27 +450,17 @@
         >
           •••
         </button>
-
       </header>
-
-
-
       <div
         id="chatMessages"
         class="chat-messages"
       ></div>
-
-
-
       <div class="chat-input-area">
-
         <textarea
           id="chatInput"
           rows="1"
           placeholder="Напиши сообщение..."
         ></textarea>
-
-
         <button
           id="sendMessage"
           class="send-button"
@@ -721,80 +468,51 @@
         >
           ↑
         </button>
-
       </div>
-
     </main>
-
-
-
     <!-- =================================================
          BOTTOM NAV
          ================================================= -->
-
     <nav class="bottom-nav">
-
-
       <button
         class="nav-button active"
         data-page="home"
         type="button"
       >
-
         <span>
           ◉
         </span>
-
         <small>
           Chats
         </small>
-
       </button>
-
-
       <button
         id="createNav"
         class="create-nav"
         type="button"
       >
-
         ＋
-
         <small>
           Create
         </small>
-
       </button>
-
-
       <button
         class="nav-button"
         data-page="tracks"
         type="button"
       >
-
         <span>
           ♪
         </span>
-
         <small>
           Tracks
         </small>
-
       </button>
-
     </nav>
-
   </section>
-
-
-
   <!-- =====================================================
-       APP.JS
+       JAVASCRIPT
        ===================================================== -->
-
   <script src="app.js"></script>
-
 </body>
-
 </html>
