@@ -1,84 +1,58 @@
 /* =====================================================
    FAIR — APP.JS
    ===================================================== */
-
 const STORAGE_KEY = "fair_data_v2";
-
 const DB_NAME = "fair_music_db";
 const DB_VERSION = 1;
 const TRACK_STORE = "tracks";
-
 const AI_WORKER_URL =
   "https://summer-heart-97c3.comedyfox6.workers.dev/";
-
 const defaultData = {
   user: {
     name: "",
     avatar: ""
   },
-
   characters: [],
-
   chats: {}
 };
-
-
 let data = loadData();
-
 let currentCharacter = null;
-
 let newCharacterAvatar = "";
-
 let editingCharacterId = null;
-
 let musicDBPromise = null;
-
-
+/* =====================================================
+   MUSIC PLAYER STATE
+   ===================================================== */
+let currentAudio = null;
+let currentTrackId = null;
+let currentTrackIndex = -1;
+let currentTracks = [];
+const trackObjectURLs = new Map();
 /* =====================================================
    HELPERS
    ===================================================== */
-
 function $(id) {
   return document.getElementById(id);
 }
-
-
 function makeId() {
-
   return (
     Date.now().toString(36) +
     Math.random().toString(36).slice(2)
   );
-
 }
-
-
 function escapeHTML(value) {
-
   return String(value)
-
     .replaceAll("&", "&amp;")
-
     .replaceAll("<", "&lt;")
-
     .replaceAll(">", "&gt;")
-
     .replaceAll('"', "&quot;")
-
     .replaceAll("'", "&#039;");
-
 }
-
-
 function avatarPlaceholder(name = "?") {
-
   const letter =
     name.trim().charAt(0).toUpperCase() || "?";
-
-
   return (
     "data:image/svg+xml;charset=UTF-8," +
-
     encodeURIComponent(`
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -91,7 +65,6 @@ function avatarPlaceholder(name = "?") {
           height="300"
           fill="#17131a"
         />
-
         <text
           x="150"
           y="175"
@@ -105,1559 +78,1129 @@ function avatarPlaceholder(name = "?") {
       </svg>
     `)
   );
-
 }
-
-
 /* =====================================================
    LOCAL STORAGE
    ===================================================== */
-
 function loadData() {
-
   try {
-
     const saved =
       localStorage.getItem(
         STORAGE_KEY
       );
-
-
     if (saved) {
-
       const parsed =
         JSON.parse(saved);
-
-
       return {
-
         ...structuredClone(
           defaultData
         ),
-
         ...parsed,
-
         user: {
           ...defaultData.user,
           ...(parsed.user || {})
         },
-
         characters:
           Array.isArray(
             parsed.characters
           )
             ? parsed.characters
             : [],
-
         chats:
           parsed.chats &&
           typeof parsed.chats === "object"
             ? parsed.chats
             : {}
-
       };
-
     }
-
   } catch (error) {
-
     console.error(
       "Fair storage error:",
       error
     );
-
   }
-
-
   return structuredClone(
     defaultData
   );
-
 }
-
-
 function saveData() {
-
   try {
-
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify(data)
     );
-
   } catch (error) {
-
     console.error(
       "Fair save error:",
       error
     );
-
-
     alert(
       "Fair не смог сохранить данные. Возможно, браузеру не хватает места."
     );
-
   }
-
 }
-
-
 /* =====================================================
    INDEXEDDB — MUSIC
    ===================================================== */
-
 function openMusicDB() {
-
   if (musicDBPromise) {
-
     return musicDBPromise;
-
   }
-
-
   musicDBPromise =
     new Promise(
       (resolve, reject) => {
-
         const request =
           indexedDB.open(
             DB_NAME,
             DB_VERSION
           );
-
-
         request.onupgradeneeded =
           event => {
-
             const db =
               event.target.result;
-
-
             if (
               !db.objectStoreNames.contains(
                 TRACK_STORE
               )
             ) {
-
               db.createObjectStore(
                 TRACK_STORE,
                 {
                   keyPath: "id"
                 }
               );
-
             }
-
           };
-
-
         request.onsuccess =
           () => {
-
             resolve(
               request.result
             );
-
           };
-
-
         request.onerror =
           () => {
-
             console.error(
               "Fair IndexedDB error:",
               request.error
             );
-
             reject(
               request.error
             );
-
           };
-
       }
     );
-
-
   return musicDBPromise;
-
 }
-
-
 async function saveTrackToDB(track) {
-
   const db =
     await openMusicDB();
-
-
   return new Promise(
     (resolve, reject) => {
-
       const transaction =
         db.transaction(
           TRACK_STORE,
           "readwrite"
         );
-
-
       const store =
         transaction.objectStore(
           TRACK_STORE
         );
-
-
       store.put(track);
-
-
       transaction.oncomplete =
         () => resolve();
-
-
       transaction.onerror =
         () => reject(
           transaction.error
         );
-
     }
   );
-
 }
-
-
 async function getAllTracksFromDB() {
-
   const db =
     await openMusicDB();
-
-
   return new Promise(
     (resolve, reject) => {
-
       const transaction =
         db.transaction(
           TRACK_STORE,
           "readonly"
         );
-
-
       const store =
         transaction.objectStore(
           TRACK_STORE
         );
-
-
       const request =
         store.getAll();
-
-
       request.onsuccess =
         () => {
-
           const tracks =
             request.result || [];
-
-
           tracks.sort(
             (a, b) =>
               (a.createdAt || 0) -
               (b.createdAt || 0)
           );
-
-
           resolve(
             tracks
           );
-
         };
-
-
       request.onerror =
         () => reject(
           request.error
         );
-
     }
   );
-
 }
-
-
 async function deleteTrackFromDB(id) {
-
   const db =
     await openMusicDB();
-
-
   return new Promise(
     (resolve, reject) => {
-
       const transaction =
         db.transaction(
           TRACK_STORE,
           "readwrite"
         );
-
-
       transaction
         .objectStore(TRACK_STORE)
         .delete(id);
-
-
       transaction.oncomplete =
         () => resolve();
-
-
       transaction.onerror =
         () => reject(
           transaction.error
         );
-
     }
   );
-
 }
-
-
+/* =====================================================
+   MUSIC PLAYER
+   ===================================================== */
+function releaseTrackURL(trackId) {
+  const url =
+    trackObjectURLs.get(
+      trackId
+    );
+  if (url) {
+    URL.revokeObjectURL(
+      url
+    );
+    trackObjectURLs.delete(
+      trackId
+    );
+  }
+}
+function getTrackURL(track) {
+  if (
+    trackObjectURLs.has(
+      track.id
+    )
+  ) {
+    return trackObjectURLs.get(
+      track.id
+    );
+  }
+  if (!track.blob) {
+    return "";
+  }
+  const url =
+    URL.createObjectURL(
+      track.blob
+    );
+  trackObjectURLs.set(
+    track.id,
+    url
+  );
+  return url;
+}
+function stopCurrentTrack() {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime =
+      0;
+  }
+  currentAudio =
+    null;
+  currentTrackId =
+    null;
+  currentTrackIndex =
+    -1;
+  updateTrackVisualState();
+}
+function pauseAllTrackAudios(except = null) {
+  document
+    .querySelectorAll(
+      ".track-audio"
+    )
+    .forEach(
+      audio => {
+        if (
+          audio !== except
+        ) {
+          audio.pause();
+        }
+      }
+    );
+}
+function updateTrackVisualState() {
+  document
+    .querySelectorAll(
+      ".track-item"
+    )
+    .forEach(
+      item => {
+        item.classList.toggle(
+          "playing",
+          item.dataset.trackId ===
+            currentTrackId
+        );
+      }
+    );
+}
+async function playTrack(
+  track,
+  index,
+  audioElement
+) {
+  if (!track || !audioElement) {
+    return;
+  }
+  pauseAllTrackAudios(
+    audioElement
+  );
+  if (
+    currentAudio &&
+    currentAudio !== audioElement
+  ) {
+    currentAudio.pause();
+  }
+  const url =
+    getTrackURL(
+      track
+    );
+  if (!url) {
+    return;
+  }
+  if (
+    audioElement.src !==
+    url
+  ) {
+    audioElement.src =
+      url;
+  }
+  currentAudio =
+    audioElement;
+  currentTrackId =
+    track.id;
+  currentTrackIndex =
+    index;
+  updateTrackVisualState();
+  try {
+    await audioElement.play();
+  } catch (error) {
+    console.warn(
+      "Fair audio play blocked:",
+      error
+    );
+  }
+}
+async function playNextTrack(
+  finishedIndex
+) {
+  if (
+    !currentTracks.length
+  ) {
+    return;
+  }
+  const nextIndex =
+    (
+      finishedIndex + 1
+    ) %
+    currentTracks.length;
+  const nextTrack =
+    currentTracks[
+      nextIndex
+    ];
+  if (!nextTrack) {
+    return;
+  }
+  const audio =
+    document.querySelector(
+      `.track-audio[data-track-id="${CSS.escape(nextTrack.id)}"]`
+    );
+  if (!audio) {
+    /*
+      Если список успел перерисоваться,
+      заново создаём список и запускаем
+      следующий трек после отрисовки.
+    */
+    await renderTracks();
+    const retryAudio =
+      document.querySelector(
+        `.track-audio[data-track-id="${CSS.escape(nextTrack.id)}"]`
+      );
+    if (retryAudio) {
+      await playTrack(
+        nextTrack,
+        nextIndex,
+        retryAudio
+      );
+    }
+    return;
+  }
+  await playTrack(
+    nextTrack,
+    nextIndex,
+    audio
+  );
+}
 /* =====================================================
    ENTER APP
    ===================================================== */
-
 function enterApp() {
-
   const welcome =
     $("welcome");
-
   const app =
     $("app");
-
-
   if (!welcome || !app) {
-
     alert(
       "Fair: элементы приложения не найдены."
     );
-
     return;
-
   }
-
-
   welcome.classList.add(
     "hidden"
   );
-
   app.classList.remove(
     "hidden"
   );
-
-
   showPage("home");
-
 }
-
-
 $("guestLogin")?.addEventListener(
   "click",
   enterApp
 );
-
-
 $("googleLogin")?.addEventListener(
   "click",
   event => {
-
     event.preventDefault();
-
     enterApp();
-
   }
 );
-
-
 /* =====================================================
    PAGE NAVIGATION
    ===================================================== */
-
 function showPage(page) {
-
   const pages = [
-
     "homePage",
     "createPage",
     "tracksPage",
     "profilePage",
     "chatPage"
-
   ];
-
-
   pages.forEach(
     id => {
-
       const element =
         $(id);
-
-
       if (element) {
-
         element.classList.add(
           "hidden"
         );
-
       }
-
     }
   );
-
-
   const target =
     $(page + "Page");
-
-
   if (!target) {
-
     console.warn(
       "Fair: страница не найдена:",
       page
     );
-
     return;
-
   }
-
-
   target.classList.remove(
     "hidden"
   );
-
-
   document
     .querySelectorAll(
       ".nav-button"
     )
     .forEach(
       button => {
-
         button.classList.toggle(
           "active",
           button.dataset.page === page
         );
-
       }
     );
-
-
   if (page === "home") {
-
     renderHome();
-
   }
-
-
   if (page === "tracks") {
-
     renderTracks();
-
   }
-
-
   if (page === "profile") {
-
     renderProfile();
-
   }
-
-
   if (page === "chat") {
-
     setTimeout(
       () => {
-
         $("chatInput")?.focus();
-
       },
       50
     );
-
   }
-
 }
-
-
 /* Нижняя навигация */
-
 document
   .querySelectorAll(
     ".nav-button"
   )
   .forEach(
     button => {
-
       button.addEventListener(
         "click",
         event => {
-
           event.preventDefault();
-
           showPage(
             button.dataset.page
           );
-
         }
       );
-
     }
   );
-
-
 /* =====================================================
    CREATE / EDIT NAVIGATION
    ===================================================== */
-
 $("createNav")?.addEventListener(
   "click",
   event => {
-
     event.preventDefault();
-
     openCreate();
-
   }
 );
-
-
 $("emptyCreateButton")?.addEventListener(
   "click",
   event => {
-
     event.preventDefault();
-
     openCreate();
-
   }
 );
-
-
 function openCreate() {
-
   editingCharacterId =
     null;
-
-
   resetCreateForm();
-
-
   const title =
     document.querySelector(
       "#createPage h1"
     );
-
-
   if (title) {
-
     title.textContent =
       "Создать персонажа";
-
   }
-
-
   const button =
     $("createCharacterButton");
-
-
   if (button) {
-
     button.textContent =
       "Создать персонажа";
-
   }
-
-
   showPage("create");
-
 }
-
-
 /* =====================================================
    BACK BUTTONS
    ===================================================== */
-
 document
   .querySelectorAll(
     "[data-page]"
   )
   .forEach(
     button => {
-
       if (
         button.classList.contains(
           "nav-button"
         )
       ) {
-
         return;
-
       }
-
-
       button.addEventListener(
         "click",
         event => {
-
           event.preventDefault();
-
           showPage(
             button.dataset.page
           );
-
         }
       );
-
     }
   );
-
-
 /* Отдельная кнопка назад в чате */
-
 $("chatBack")?.addEventListener(
   "click",
   event => {
-
     event.preventDefault();
-
     currentCharacter =
       null;
-
     showPage("home");
-
   }
 );
-
-
 /* =====================================================
    HOME
    ===================================================== */
-
 function renderHome() {
-
   renderCharacters();
-
   renderRecentChats();
-
 }
-
-
 /* =====================================================
    CHARACTERS
    ===================================================== */
-
 function renderCharacters() {
-
   const grid =
     $("charactersGrid");
-
-
   if (!grid) {
-
     return;
-
   }
-
-
   grid.innerHTML = "";
-
-
   const empty =
     $("emptyCharacters");
-
-
   if (empty) {
-
     empty.classList.toggle(
       "hidden",
       data.characters.length > 0
     );
-
   }
-
-
   data.characters.forEach(
     character => {
-
       const card =
         document.createElement(
           "button"
         );
-
-
       card.type =
         "button";
-
-
       card.className =
         "character-card";
-
-
       const avatar =
         character.avatar ||
         avatarPlaceholder(
           character.name
         );
-
-
       card.innerHTML = `
-
         <img
           class="character-avatar"
           src="${avatar}"
           alt=""
         >
-
         <div class="character-card-name">
           ${escapeHTML(
             character.name
           )}
         </div>
-
         <div class="character-card-description">
           ${escapeHTML(
             character.description ||
             "Персонаж"
           )}
         </div>
-
       `;
-
-
       card.addEventListener(
         "click",
         () => {
-
           openChat(
             character.id
           );
-
         }
       );
-
-
       grid.appendChild(
         card
       );
-
     }
   );
-
 }
-
-
 /* =====================================================
    RECENT CHATS
    ===================================================== */
-
 function renderRecentChats() {
-
   const container =
     $("recentChats");
-
-
   if (!container) {
-
     return;
-
   }
-
-
   container.innerHTML = "";
-
-
   const recent = [];
-
-
   Object.keys(
     data.chats
   )
     .forEach(
       characterId => {
-
         const character =
           data.characters.find(
             c =>
               c.id === characterId
           );
-
-
         const messages =
           data.chats[
             characterId
           ];
-
-
         if (
           character &&
           Array.isArray(messages) &&
           messages.length
         ) {
-
           const last =
             messages[
               messages.length - 1
             ];
-
-
           recent.push({
-
             character,
-
             time:
               last.time || 0
-
           });
-
         }
-
       }
     );
-
-
   recent.sort(
     (a, b) =>
       b.time - a.time
   );
-
-
   if (!recent.length) {
-
     container.innerHTML = `
       <div class="empty-recent">
         Здесь появятся последние разговоры
       </div>
     `;
-
     return;
-
   }
-
-
   recent
     .slice(0, 10)
     .forEach(
       item => {
-
         const button =
           document.createElement(
             "button"
           );
-
-
         button.type =
           "button";
-
-
         button.className =
           "recent-card";
-
-
         const avatar =
           item.character.avatar ||
           avatarPlaceholder(
             item.character.name
           );
-
-
         button.innerHTML = `
-
           <img
             src="${avatar}"
             alt=""
           >
-
           <span>
             ${escapeHTML(
               item.character.name
             )}
           </span>
-
         `;
-
-
         button.addEventListener(
           "click",
           () => {
-
             openChat(
               item.character.id
             );
-
           }
         );
-
-
         container.appendChild(
           button
         );
-
       }
     );
-
 }
-
-
 /* =====================================================
    CREATE / EDIT AVATAR
    ===================================================== */
-
 $("characterAvatar")?.addEventListener(
   "change",
   event => {
-
     const file =
       event.target.files?.[0];
-
-
     if (!file) {
-
       return;
-
     }
-
-
     if (
       file.type &&
       !file.type.startsWith(
         "image/"
       )
     ) {
-
       alert(
         "Нужен именно файл изображения."
       );
-
       return;
-
     }
-
-
     const reader =
       new FileReader();
-
-
     reader.onload =
       () => {
-
         newCharacterAvatar =
           reader.result;
-
-
         if (
           $("characterAvatarPreview")
         ) {
-
           $("characterAvatarPreview")
             .src =
             reader.result;
-
         }
-
-
         if (
           $("characterAvatarPlaceholder")
         ) {
-
           $("characterAvatarPlaceholder")
             .style.display =
             "none";
-
         }
-
       };
-
-
     reader.readAsDataURL(
       file
     );
-
   }
 );
-
-
 /* =====================================================
    CREATE / EDIT CHARACTER
    ===================================================== */
-
 $("createCharacterButton")
   ?.addEventListener(
     "click",
     saveCharacter
   );
-
-
 function saveCharacter() {
-
   const name =
     $("characterName")
       ?.value
       .trim();
-
-
   if (!name) {
-
     alert(
       "Сначала дай персонажу имя."
     );
-
     return;
-
   }
-
-
   const characterData = {
-
     name,
-
     gender:
       $("characterGender")
         ?.value ||
       "",
-
     avatar:
       newCharacterAvatar,
-
     description:
       $("characterDescription")
         ?.value
         .trim() ||
       "",
-
     personality:
       $("characterPersonality")
         ?.value
         .trim() ||
       "",
-
     greeting:
       $("characterGreeting")
         ?.value
         .trim() ||
       "",
-
     userPersona:
       $("userPersona")
         ?.value
         .trim() ||
       "",
-
     instructions:
       $("characterInstructions")
         ?.value
         .trim() ||
       ""
-
   };
-
-
   /* РЕДАКТИРОВАНИЕ */
-
   if (editingCharacterId) {
-
     const character =
       data.characters.find(
         c =>
           c.id ===
           editingCharacterId
       );
-
-
     if (!character) {
-
       editingCharacterId =
         null;
-
       return;
-
     }
-
-
     Object.assign(
       character,
       characterData
     );
-
-
     saveData();
-
-
     currentCharacter =
       character;
-
-
     editingCharacterId =
       null;
-
-
     openChat(
       character.id
     );
-
-
     return;
-
   }
-
-
   /* СОЗДАНИЕ */
-
   const character = {
-
     id: makeId(),
-
     ...characterData,
-
     createdAt:
       Date.now()
-
   };
-
-
   data.characters.push(
     character
   );
-
-
   data.chats[
     character.id
   ] = [];
-
-
   saveData();
-
-
   openChat(
     character.id
   );
-
 }
-
-
 /* =====================================================
    EDIT CHARACTER
    ===================================================== */
-
 function openEditCharacter() {
-
   if (!currentCharacter) {
-
     return;
-
   }
-
-
   const character =
     currentCharacter;
-
-
   editingCharacterId =
     character.id;
-
-
   $("characterName").value =
     character.name || "";
-
-
   $("characterGender").value =
     character.gender || "";
-
-
   $("characterDescription").value =
     character.description || "";
-
-
   $("characterPersonality").value =
     character.personality || "";
-
-
   $("characterGreeting").value =
     character.greeting || "";
-
-
   $("userPersona").value =
     character.userPersona || "";
-
-
   $("characterInstructions").value =
     character.instructions || "";
-
-
   newCharacterAvatar =
     character.avatar || "";
-
-
   if (
     $("characterAvatarPreview")
   ) {
-
     $("characterAvatarPreview")
       .src =
       newCharacterAvatar;
-
   }
-
-
   if (
     $("characterAvatarPlaceholder")
   ) {
-
     $("characterAvatarPlaceholder")
       .style.display =
       newCharacterAvatar
         ? "none"
         : "";
-
   }
-
-
   const title =
     document.querySelector(
       "#createPage h1"
     );
-
-
   if (title) {
-
     title.textContent =
       "Редактировать персонажа";
-
   }
-
-
   const button =
     $("createCharacterButton");
-
-
   if (button) {
-
     button.textContent =
       "Сохранить изменения";
-
   }
-
-
   showPage("create");
-
 }
-
-
 /* =====================================================
    DELETE CHARACTER
    ===================================================== */
-
 async function deleteCurrentCharacter() {
-
   if (!currentCharacter) {
-
     return;
-
   }
-
-
   const character =
     currentCharacter;
-
-
   const confirmed =
     confirm(
       `Удалить персонажа «${character.name}»?\n\nЕго история чата тоже будет удалена.`
     );
-
-
   if (!confirmed) {
-
     return;
-
   }
-
-
   data.characters =
     data.characters.filter(
       c =>
         c.id !== character.id
     );
-
-
   delete data.chats[
     character.id
   ];
-
-
   saveData();
-
-
   currentCharacter =
     null;
-
-
   showPage("home");
-
 }
-
-
 /* =====================================================
    RESET CREATE FORM
    ===================================================== */
-
 function resetCreateForm() {
-
   [
-
     "characterName",
     "characterDescription",
     "characterPersonality",
     "characterGreeting",
     "userPersona",
     "characterInstructions"
-
   ]
     .forEach(
       id => {
-
         const input =
           $(id);
-
-
         if (input) {
-
           input.value =
             "";
-
         }
-
       }
     );
-
-
   if (
     $("characterGender")
   ) {
-
     $("characterGender")
       .value =
       "";
-
   }
-
-
   newCharacterAvatar =
     "";
-
-
   if (
     $("characterAvatarPreview")
   ) {
-
     $("characterAvatarPreview")
       .src =
       "";
-
   }
-
-
   if (
     $("characterAvatarPlaceholder")
   ) {
-
     $("characterAvatarPlaceholder")
       .style.display =
       "";
-
   }
-
-
   if (
     $("characterAvatar")
   ) {
-
     $("characterAvatar")
       .value =
       "";
-
   }
-
 }
-
-
 /* =====================================================
    CHAT
    ===================================================== */
-
 function openChat(characterId) {
-
   const character =
     data.characters.find(
       c =>
         c.id === characterId
     );
-
-
   if (!character) {
-
     return;
-
   }
-
-
   currentCharacter =
     character;
-
-
   if (
     $("chatName")
   ) {
-
     $("chatName")
       .textContent =
       character.name;
-
   }
-
-
   if (
     $("chatAvatar")
   ) {
-
     $("chatAvatar")
       .src =
       character.avatar ||
       avatarPlaceholder(
         character.name
       );
-
   }
-
-
   showPage("chat");
-
   renderChat();
-
 }
-
-
 function renderChat() {
-
   const container =
     $("chatMessages");
-
-
   if (
     !container ||
     !currentCharacter
   ) {
-
     return;
-
   }
-
-
   container.innerHTML =
     "";
-
-
   const messages =
     data.chats[
       currentCharacter.id
     ] || [];
-
-
   if (
     messages.length === 0 &&
     currentCharacter.greeting
   ) {
-
     addMessage(
       "bot",
       currentCharacter.greeting
     );
-
   }
-
-
   messages.forEach(
     message => {
-
       addMessage(
         message.role,
         message.content,
         false
       );
-
     }
   );
-
-
   container.scrollTop =
     container.scrollHeight;
-
 }
-
-
 function addMessage(
   role,
   text,
   scroll = true
 ) {
-
   const container =
     $("chatMessages");
-
-
   if (!container) {
-
     return;
-
   }
-
-
   const message =
     document.createElement(
       "div"
     );
-
-
   message.className =
     `message ${role}`;
-
-
   message.textContent =
     text;
-
-
   container.appendChild(
     message
   );
-
-
   if (scroll) {
-
     container.scrollTop =
       container.scrollHeight;
-
   }
-
 }
-
-
 /* =====================================================
    CHAT MENU
    ===================================================== */
-
 function openChatMenu() {
-
   if (!currentCharacter) {
-
     return;
-
   }
-
-
   const action =
     prompt(
       `Персонаж: ${currentCharacter.name}\n\n` +
@@ -1665,180 +1208,101 @@ function openChatMenu() {
       `2 — Удалить\n\n` +
       `Введи 1 или 2.`
     );
-
-
   if (action === "1") {
-
     openEditCharacter();
-
   }
-
-
   if (action === "2") {
-
     deleteCurrentCharacter();
-
   }
-
 }
-
-
 $("chatMore")?.addEventListener(
   "click",
   event => {
-
     event.preventDefault();
-
     openChatMenu();
-
   }
 );
-
-
 /* =====================================================
    SEND MESSAGE — AI
    ===================================================== */
-
 $("sendMessage")?.addEventListener(
   "click",
   sendMessage
 );
-
-
 $("chatInput")?.addEventListener(
   "keydown",
   event => {
-
     if (
       event.key === "Enter" &&
       !event.shiftKey
     ) {
-
       event.preventDefault();
-
       sendMessage();
-
     }
-
   }
 );
-
-
 async function sendMessage() {
-
   if (!currentCharacter) {
-
     return;
-
   }
-
-
   const input =
     $("chatInput");
-
-
   if (!input) {
-
     return;
-
   }
-
-
   const text =
     input.value.trim();
-
-
   if (!text) {
-
     return;
-
   }
-
-
   input.value =
     "";
-
-
   if (
     !data.chats[
       currentCharacter.id
     ]
   ) {
-
     data.chats[
       currentCharacter.id
     ] = [];
-
   }
-
-
   const history =
     data.chats[
       currentCharacter.id
     ];
-
-
   history.push({
-
     role: "user",
-
     content: text,
-
     time:
       Date.now()
-
   });
-
-
   addMessage(
     "user",
     text
   );
-
-
   saveData();
-
   renderRecentChats();
-
-
   const sendButton =
     $("sendMessage");
-
-
   if (sendButton) {
-
     sendButton.disabled =
       true;
-
   }
-
-
   let typingMessage =
     null;
-
-
   try {
-
     typingMessage =
       document.createElement(
         "div"
       );
-
-
     typingMessage.className =
       "message bot";
-
-
     typingMessage.textContent =
       "…";
-
-
     $("chatMessages")
       ?.appendChild(
         typingMessage
       );
-
-
     $("chatMessages")
       ?.scrollTo(
         {
@@ -1849,178 +1313,110 @@ async function sendMessage() {
             "smooth"
         }
       );
-
-
     const payload = {
-
       character: {
-
         id:
           currentCharacter.id,
-
         name:
           currentCharacter.name,
-
         gender:
           currentCharacter.gender,
-
         description:
           currentCharacter.description,
-
         personality:
           currentCharacter.personality,
-
         greeting:
           currentCharacter.greeting,
-
         userPersona:
           currentCharacter.userPersona,
-
         instructions:
           currentCharacter.instructions
-
       },
-
       userPersona:
         currentCharacter.userPersona || "",
-
       history:
         history.slice(
           -20
         ),
-
       messages:
         history.slice(
           -20
         ),
-
       userMessage:
         text,
-
       message:
         text
-
     };
-
-
     const response =
       await fetch(
         AI_WORKER_URL,
         {
-
           method:
             "POST",
-
           headers: {
-
             "Content-Type":
               "application/json"
-
           },
-
           body:
             JSON.stringify(
               payload
             )
-
         }
       );
-
-
     let result =
       null;
-
-
     try {
-
       result =
         await response.json();
-
     } catch {
-
       result =
         {
           error:
             await response.text()
         };
-
     }
-
-
     if (!response.ok) {
-
       throw new Error(
         result?.error ||
         `Worker HTTP ${response.status}`
       );
-
     }
-
-
     const botText =
       result?.reply ||
       result?.response ||
       result?.message ||
       result?.text ||
       result?.content;
-
-
     if (!botText) {
-
       throw new Error(
         "Worker ответил, но не прислал текст ответа."
       );
-
     }
-
-
     if (typingMessage) {
-
       typingMessage.remove();
-
     }
-
-
     history.push({
-
       role:
         "bot",
-
       content:
         String(botText),
-
       time:
         Date.now()
-
     });
-
-
     addMessage(
       "bot",
       String(botText)
     );
-
-
     saveData();
-
     renderRecentChats();
-
-
   } catch (error) {
-
     console.error(
       "Fair AI error:",
       error
     );
-
-
     if (typingMessage) {
-
       typingMessage.remove();
-
     }
-
-
     addMessage(
       "bot",
       "Ошибка AI: " +
@@ -2029,250 +1425,147 @@ async function sendMessage() {
         String(error)
       )
     );
-
   } finally {
-
     if (sendButton) {
-
       sendButton.disabled =
         false;
-
     }
-
-
     input.focus();
-
   }
-
 }
-
-
 /* =====================================================
    PROFILE
    ===================================================== */
-
 $("profileButton")?.addEventListener(
   "click",
   event => {
-
     event.preventDefault();
-
     showPage("profile");
-
   }
 );
-
-
 function renderProfile() {
-
   if (!$("userName")) {
-
     return;
-
   }
-
-
   $("userName").value =
     data.user.name || "";
-
-
   if (
     data.user.avatar
   ) {
-
     $("profileAvatarPreview")
       .src =
       data.user.avatar;
-
-
     $("profileAvatarPlaceholder")
       .style.display =
       "none";
-
   } else {
-
     $("profileAvatarPreview")
       .src =
       "";
-
-
     $("profileAvatarPlaceholder")
       .style.display =
       "";
-
   }
-
-
   updateUserAvatar();
-
 }
-
-
 /* Avatar пользователя */
-
 $("userAvatarInput")
   ?.addEventListener(
     "change",
     event => {
-
       const file =
         event.target.files?.[0];
-
-
       if (!file) {
-
         return;
-
       }
-
-
       if (
         file.type &&
         !file.type.startsWith(
           "image/"
         )
       ) {
-
         alert(
           "Нужен файл изображения."
         );
-
         return;
-
       }
-
-
       const reader =
         new FileReader();
-
-
       reader.onload =
         () => {
-
           data.user.avatar =
             reader.result;
-
-
           saveData();
-
           renderProfile();
-
         };
-
-
       reader.readAsDataURL(
         file
       );
-
     }
   );
-
-
 $("saveProfile")
   ?.addEventListener(
     "click",
     event => {
-
       event.preventDefault();
-
-
       data.user.name =
         $("userName")
           ?.value
           .trim() ||
         "";
-
-
       saveData();
-
       updateUserAvatar();
-
       showPage("home");
-
     }
   );
-
-
 function updateUserAvatar() {
-
   const image =
     $("userAvatar");
-
-
   const placeholder =
     $("defaultUserAvatar");
-
-
   if (
     !image ||
     !placeholder
   ) {
-
     return;
-
   }
-
-
   if (
     data.user.avatar
   ) {
-
     image.src =
       data.user.avatar;
-
-
     image.style.display =
       "block";
-
-
     placeholder.style.display =
       "none";
-
   } else {
-
     image.style.display =
       "none";
-
-
     placeholder.style.display =
       "inline";
-
   }
-
 }
-
-
 /* =====================================================
    TRACKS — UPLOAD
    ===================================================== */
-
 $("musicUpload")
   ?.addEventListener(
     "change",
     handleMusicUpload
   );
-
-
 function isProbablyAudioFile(file) {
-
   if (
     file.type &&
     file.type.startsWith(
       "audio/"
     )
   ) {
-
     return true;
-
   }
-
-
   const name =
     String(
       file.name || ""
     ).toLowerCase();
-
-
   return [
     ".mp3",
     ".m4a",
@@ -2290,435 +1583,332 @@ function isProbablyAudioFile(file) {
           extension
         )
     );
-
 }
-
-
 async function handleMusicUpload(
   event
 ) {
-
   const files =
     [
       ...(event.target.files || [])
     ];
-
-
   if (!files.length) {
-
     return;
-
   }
-
-
   for (
     const file of files
   ) {
-
     if (
       !isProbablyAudioFile(
         file
       )
     ) {
-
       alert(
         `«${file.name}» не похоже на аудиофайл.`
       );
-
       continue;
-
     }
-
-
     try {
-
       const track = {
-
         id:
           makeId(),
-
         name:
           file.name,
-
         type:
           file.type ||
           "audio/mpeg",
-
         blob:
           file,
-
         createdAt:
           Date.now()
-
       };
-
-
       await saveTrackToDB(
         track
       );
-
     } catch (error) {
-
       console.error(
         "Fair music upload error:",
         error
       );
-
-
       alert(
         `Не удалось добавить «${file.name}».`
       );
-
     }
-
   }
-
-
   event.target.value =
     "";
-
-
   await renderTracks();
-
 }
-
-
 /* =====================================================
    TRACKS — RENDER
    ===================================================== */
-
 async function renderTracks() {
-
   const container =
     $("tracksList");
-
-
   const empty =
     $("emptyTracks");
-
-
   if (!container) {
-
     return;
-
   }
-
-
+  /*
+    Перед новой отрисовкой останавливаем старое
+    проигрывание, но сами файлы НЕ удаляем.
+  */
+  if (currentAudio) {
+    currentAudio.pause();
+  }
+  currentAudio =
+    null;
+  currentTrackId =
+    null;
+  currentTrackIndex =
+    -1;
   container.innerHTML =
     "";
-
-
   let tracks = [];
-
-
   try {
-
     tracks =
       await getAllTracksFromDB();
-
   } catch (error) {
-
     console.error(
       "Fair tracks read error:",
       error
     );
-
-
     if (empty) {
-
       empty.classList.remove(
         "hidden"
       );
-
     }
-
-
     return;
-
   }
-
-
+  currentTracks =
+    tracks;
   if (empty) {
-
     empty.classList.toggle(
       "hidden",
       tracks.length > 0
     );
-
   }
-
-
   tracks.forEach(
-    track => {
-
+    (track, index) => {
       const item =
         document.createElement(
           "div"
         );
-
-
       item.className =
         "track-item";
-
-
+      item.dataset.trackId =
+        track.id;
       const icon =
         document.createElement(
           "div"
         );
-
-
       icon.className =
         "track-icon";
-
-
       icon.textContent =
         "♪";
-
-
       const info =
         document.createElement(
           "div"
         );
-
-
       info.className =
         "track-info";
-
-
       const name =
         document.createElement(
           "div"
         );
-
-
       name.className =
         "track-name";
-
-
       name.textContent =
         track.name;
-
-
       const audio =
         document.createElement(
           "audio"
         );
-
-
       audio.className =
         "track-audio";
-
-
       audio.controls =
         true;
-
-
-      if (track.blob) {
-
-        const url =
-          URL.createObjectURL(
-            track.blob
-          );
-
-
+      audio.preload =
+        "metadata";
+      audio.dataset.trackId =
+        track.id;
+      const url =
+        getTrackURL(
+          track
+        );
+      if (url) {
         audio.src =
           url;
-
-
-        audio.addEventListener(
-          "ended",
-          () => {
-
-            URL.revokeObjectURL(
-              url
-            );
-
-          },
-          {
-            once: true
-          }
-        );
-
       }
-
-
+      /*
+        Нажали Play на этом треке:
+        все остальные аудио автоматически
+        останавливаются.
+      */
+      audio.addEventListener(
+        "play",
+        async () => {
+          pauseAllTrackAudios(
+            audio
+          );
+          currentAudio =
+            audio;
+          currentTrackId =
+            track.id;
+          currentTrackIndex =
+            index;
+          updateTrackVisualState();
+        }
+      );
+      /*
+        Трек закончился —
+        запускаем следующий.
+      */
+      audio.addEventListener(
+        "ended",
+        async () => {
+          /*
+            Проверяем, что именно этот трек
+            сейчас является активным.
+          */
+          if (
+            currentTrackId !==
+            track.id
+          ) {
+            return;
+          }
+          await playNextTrack(
+            index
+          );
+        }
+      );
       info.appendChild(
         name
       );
-
-
       info.appendChild(
         audio
       );
-
-
       const deleteButton =
         document.createElement(
           "button"
         );
-
-
       deleteButton.type =
         "button";
-
-
       deleteButton.className =
         "track-delete";
-
-
       deleteButton.textContent =
         "×";
-
-
       deleteButton.title =
         "Удалить";
-
-
       deleteButton.addEventListener(
         "click",
         async event => {
-
           event.stopPropagation();
-
-
           const confirmed =
             confirm(
               `Удалить «${track.name}»?`
             );
-
-
           if (!confirmed) {
-
             return;
-
           }
-
-
           try {
-
+            if (
+              currentTrackId ===
+              track.id
+            ) {
+              stopCurrentTrack();
+            }
+            releaseTrackURL(
+              track.id
+            );
             await deleteTrackFromDB(
               track.id
             );
-
-
             await renderTracks();
-
           } catch (error) {
-
             console.error(
               "Fair track delete error:",
               error
             );
-
           }
-
         }
       );
-
-
       item.appendChild(
         icon
       );
-
-
       item.appendChild(
         info
       );
-
-
       item.appendChild(
         deleteButton
       );
-
-
       container.appendChild(
         item
       );
-
     }
   );
-
+  updateTrackVisualState();
 }
-
-
+/* =====================================================
+   CLEAN UP MUSIC OBJECT URLS
+   ===================================================== */
+window.addEventListener(
+  "beforeunload",
+  () => {
+    trackObjectURLs.forEach(
+      url => {
+        URL.revokeObjectURL(
+          url
+        );
+      }
+    );
+    trackObjectURLs.clear();
+  }
+);
 /* =====================================================
    MORE
    ===================================================== */
-
 $("moreButton")?.addEventListener(
   "click",
   event => {
-
     event.preventDefault();
-
     alert(
       "Настройки Fair появятся здесь."
     );
-
   }
 );
-
-
 /* =====================================================
    MATRIX
    ===================================================== */
-
 const matrix =
   $("matrix");
-
-
 if (matrix) {
-
   const ctx =
     matrix.getContext(
       "2d"
     );
-
-
   let width = 0;
-
   let height = 0;
-
   let columns = 0;
-
   let drops = [];
-
-
   const symbols =
     "01アイウエオカキクケコサシスセソABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-
   function resizeMatrix() {
-
     const ratio =
       window.devicePixelRatio ||
       1;
-
-
     width =
       window.innerWidth;
-
-
     height =
       window.innerHeight;
-
-
     matrix.width =
       width * ratio;
-
-
     matrix.height =
       height * ratio;
-
-
     matrix.style.width =
       width + "px";
-
-
     matrix.style.height =
       height + "px";
-
-
     ctx.setTransform(
       ratio,
       0,
@@ -2727,14 +1917,10 @@ if (matrix) {
       0,
       0
     );
-
-
     columns =
       Math.ceil(
         width / 18
       );
-
-
     drops =
       Array.from(
         {
@@ -2744,51 +1930,32 @@ if (matrix) {
         () =>
           Math.random() * -100
       );
-
   }
-
-
   resizeMatrix();
-
-
   window.addEventListener(
     "resize",
     resizeMatrix
   );
-
-
   function drawMatrix() {
-
     ctx.fillStyle =
       "rgba(6, 5, 9, 0.055)";
-
-
     ctx.fillRect(
       0,
       0,
       width,
       height
     );
-
-
     ctx.font =
       "14px monospace";
-
-
     for (
       let i = 0;
       i < columns;
       i++
     ) {
-
       const x =
         i * 18;
-
-
       const y =
         drops[i] * 18;
-
-
       const symbol =
         symbols[
           Math.floor(
@@ -2796,77 +1963,45 @@ if (matrix) {
             symbols.length
           )
         ];
-
-
       const brightness =
         Math.random();
-
-
       if (
         brightness > 0.88
       ) {
-
         ctx.fillStyle =
           "rgba(255,255,255,0.9)";
-
       } else {
-
         ctx.fillStyle =
           "rgba(255,130,205,0.68)";
-
       }
-
-
       ctx.shadowBlur =
         8;
-
-
       ctx.shadowColor =
         "rgba(255,100,200,0.65)";
-
-
       ctx.fillText(
         symbol,
         x,
         y
       );
-
-
       ctx.shadowBlur =
         0;
-
-
       drops[i] +=
         0.32;
-
-
       if (
         y > height &&
         Math.random() > 0.97
       ) {
-
         drops[i] =
           Math.random() * -30;
-
       }
-
     }
-
-
     requestAnimationFrame(
       drawMatrix
     );
-
   }
-
-
   drawMatrix();
-
 }
-
-
 /* =====================================================
    INITIAL STATE
    ===================================================== */
-
 updateUserAvatar();
