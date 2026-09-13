@@ -85,25 +85,19 @@ function avatarPlaceholder(name = "?") {
 function loadData() {
   try {
     const saved =
-      localStorage.getItem(
-        STORAGE_KEY
-      );
+      localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed =
         JSON.parse(saved);
       return {
-        ...structuredClone(
-          defaultData
-        ),
+        ...structuredClone(defaultData),
         ...parsed,
         user: {
           ...defaultData.user,
           ...(parsed.user || {})
         },
         characters:
-          Array.isArray(
-            parsed.characters
-          )
+          Array.isArray(parsed.characters)
             ? parsed.characters
             : [],
         chats:
@@ -119,9 +113,7 @@ function loadData() {
       error
     );
   }
-  return structuredClone(
-    defaultData
-  );
+  return structuredClone(defaultData);
 }
 function saveData() {
   try {
@@ -209,9 +201,10 @@ async function saveTrackToDB(track) {
       transaction.oncomplete =
         () => resolve();
       transaction.onerror =
-        () => reject(
-          transaction.error
-        );
+        () =>
+          reject(
+            transaction.error
+          );
     }
   );
 }
@@ -240,14 +233,13 @@ async function getAllTracksFromDB() {
               (a.createdAt || 0) -
               (b.createdAt || 0)
           );
-          resolve(
-            tracks
-          );
+          resolve(tracks);
         };
       request.onerror =
-        () => reject(
-          request.error
-        );
+        () =>
+          reject(
+            request.error
+          );
     }
   );
 }
@@ -267,9 +259,10 @@ async function deleteTrackFromDB(id) {
       transaction.oncomplete =
         () => resolve();
       transaction.onerror =
-        () => reject(
-          transaction.error
-        );
+        () =>
+          reject(
+            transaction.error
+          );
     }
   );
 }
@@ -278,23 +271,15 @@ async function deleteTrackFromDB(id) {
    ===================================================== */
 function releaseTrackURL(trackId) {
   const url =
-    trackObjectURLs.get(
-      trackId
-    );
+    trackObjectURLs.get(trackId);
   if (url) {
-    URL.revokeObjectURL(
-      url
-    );
-    trackObjectURLs.delete(
-      trackId
-    );
+    URL.revokeObjectURL(url);
+    trackObjectURLs.delete(trackId);
   }
 }
 function getTrackURL(track) {
   if (
-    trackObjectURLs.has(
-      track.id
-    )
+    trackObjectURLs.has(track.id)
   ) {
     return trackObjectURLs.get(
       track.id
@@ -313,80 +298,123 @@ function getTrackURL(track) {
   );
   return url;
 }
-function stopCurrentTrack() {
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.currentTime =
-      0;
-  }
-  currentAudio =
-    null;
-  currentTrackId =
-    null;
-  currentTrackIndex =
-    -1;
-  updateTrackVisualState();
-}
-function pauseAllTrackAudios(except = null) {
+/*
+  ГЛАВНАЯ ФУНКЦИЯ МУЗЫКАЛЬНОГО ПЛЕЕРА.
+  Она принудительно ставит на паузу
+  вообще ВСЕ остальные audio-элементы.
+*/
+function stopAllOtherAudios(except = null) {
   document
-    .querySelectorAll(
-      ".track-audio"
-    )
-    .forEach(
-      audio => {
-        if (
-          audio !== except
-        ) {
+    .querySelectorAll(".track-audio")
+    .forEach(audio => {
+      if (audio !== except) {
+        try {
           audio.pause();
+        } catch (error) {
+          console.warn(
+            "Fair could not pause audio:",
+            error
+          );
         }
       }
-    );
+    });
+  if (
+    currentAudio &&
+    currentAudio !== except
+  ) {
+    try {
+      currentAudio.pause();
+    } catch (error) {
+      console.warn(
+        "Fair could not pause current audio:",
+        error
+      );
+    }
+  }
+}
+/*
+  Дополнительная страховка.
+  Вызывается после начала проигрывания,
+  чтобы даже если браузер успел запустить
+  другой audio, он тут же был остановлен.
+*/
+function enforceSingleAudio(activeAudio) {
+  document
+    .querySelectorAll(".track-audio")
+    .forEach(audio => {
+      if (
+        audio !== activeAudio &&
+        !audio.paused
+      ) {
+        try {
+          audio.pause();
+        } catch (error) {
+          console.warn(
+            "Fair audio enforcement error:",
+            error
+          );
+        }
+      }
+    });
+}
+function stopCurrentTrack() {
+  if (currentAudio) {
+    try {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    } catch (error) {
+      console.warn(
+        "Fair stop error:",
+        error
+      );
+    }
+  }
+  currentAudio = null;
+  currentTrackId = null;
+  currentTrackIndex = -1;
+  updateTrackVisualState();
 }
 function updateTrackVisualState() {
   document
-    .querySelectorAll(
-      ".track-item"
-    )
-    .forEach(
-      item => {
-        item.classList.toggle(
-          "playing",
-          item.dataset.trackId ===
-            currentTrackId
-        );
-      }
-    );
+    .querySelectorAll(".track-item")
+    .forEach(item => {
+      item.classList.toggle(
+        "playing",
+        item.dataset.trackId ===
+          currentTrackId
+      );
+    });
 }
+/*
+  Программный запуск трека.
+*/
 async function playTrack(
   track,
   index,
   audioElement
 ) {
-  if (!track || !audioElement) {
+  if (
+    !track ||
+    !audioElement
+  ) {
     return;
   }
-  pauseAllTrackAudios(
+  /*
+    Сначала полностью глушим предыдущий
+    трек и все остальные audio.
+  */
+  stopAllOtherAudios(
     audioElement
   );
-  if (
-    currentAudio &&
-    currentAudio !== audioElement
-  ) {
-    currentAudio.pause();
-  }
   const url =
-    getTrackURL(
-      track
-    );
+    getTrackURL(track);
   if (!url) {
     return;
   }
   if (
-    audioElement.src !==
-    url
+    audioElement.src !== url
   ) {
-    audioElement.src =
-      url;
+    audioElement.src = url;
   }
   currentAudio =
     audioElement;
@@ -397,6 +425,27 @@ async function playTrack(
   updateTrackVisualState();
   try {
     await audioElement.play();
+    /*
+      После play() ещё раз проверяем,
+      что случайно не играет другой audio.
+    */
+    enforceSingleAudio(
+      audioElement
+    );
+    /*
+      Небольшая страховка против гонок
+      событий браузера.
+    */
+    setTimeout(() => {
+      if (
+        currentAudio ===
+        audioElement
+      ) {
+        enforceSingleAudio(
+          audioElement
+        );
+      }
+    }, 0);
   } catch (error) {
     console.warn(
       "Fair audio play blocked:",
@@ -404,6 +453,9 @@ async function playTrack(
     );
   }
 }
+/*
+  Автоматически запускает следующий трек.
+*/
 async function playNextTrack(
   finishedIndex
 ) {
@@ -418,41 +470,49 @@ async function playNextTrack(
     ) %
     currentTracks.length;
   const nextTrack =
-    currentTracks[
-      nextIndex
-    ];
+    currentTracks[nextIndex];
   if (!nextTrack) {
     return;
   }
-  const audio =
-    document.querySelector(
-      `.track-audio[data-track-id="${CSS.escape(nextTrack.id)}"]`
+  /*
+    На всякий случай полностью
+    останавливаем предыдущий.
+  */
+  stopAllOtherAudios();
+  let audio =
+    Array.from(
+      document.querySelectorAll(
+        ".track-audio"
+      )
+    ).find(
+      element =>
+        element.dataset.trackId ===
+        nextTrack.id
     );
+  /*
+    Если список успел перерисоваться —
+    создаём его заново.
+  */
   if (!audio) {
-    /*
-      Если список успел перерисоваться,
-      заново создаём список и запускаем
-      следующий трек после отрисовки.
-    */
     await renderTracks();
-    const retryAudio =
-      document.querySelector(
-        `.track-audio[data-track-id="${CSS.escape(nextTrack.id)}"]`
+    audio =
+      Array.from(
+        document.querySelectorAll(
+          ".track-audio"
+        )
+      ).find(
+        element =>
+          element.dataset.trackId ===
+          nextTrack.id
       );
-    if (retryAudio) {
-      await playTrack(
-        nextTrack,
-        nextIndex,
-        retryAudio
-      );
-    }
-    return;
   }
-  await playTrack(
-    nextTrack,
-    nextIndex,
-    audio
-  );
+  if (audio) {
+    await playTrack(
+      nextTrack,
+      nextIndex,
+      audio
+    );
+  }
 }
 /* =====================================================
    ENTER APP
@@ -529,7 +589,8 @@ function showPage(page) {
       button => {
         button.classList.toggle(
           "active",
-          button.dataset.page === page
+          button.dataset.page ===
+            page
         );
       }
     );
@@ -734,7 +795,8 @@ function renderRecentChats() {
         const character =
           data.characters.find(
             c =>
-              c.id === characterId
+              c.id ===
+              characterId
           );
         const messages =
           data.chats[
@@ -912,7 +974,6 @@ function saveCharacter() {
         .trim() ||
       ""
   };
-  /* РЕДАКТИРОВАНИЕ */
   if (editingCharacterId) {
     const character =
       data.characters.find(
@@ -939,7 +1000,6 @@ function saveCharacter() {
     );
     return;
   }
-  /* СОЗДАНИЕ */
   const character = {
     id: makeId(),
     ...characterData,
@@ -1304,15 +1364,13 @@ async function sendMessage() {
         typingMessage
       );
     $("chatMessages")
-      ?.scrollTo(
-        {
-          top:
-            $("chatMessages")
-              .scrollHeight,
-          behavior:
-            "smooth"
-        }
-      );
+      ?.scrollTo({
+        top:
+          $("chatMessages")
+            .scrollHeight,
+        behavior:
+          "smooth"
+      });
     const payload = {
       character: {
         id:
@@ -1335,13 +1393,9 @@ async function sendMessage() {
       userPersona:
         currentCharacter.userPersona || "",
       history:
-        history.slice(
-          -20
-        ),
+        history.slice(-20),
       messages:
-        history.slice(
-          -20
-        ),
+        history.slice(-20),
       userMessage:
         text,
       message:
@@ -1369,11 +1423,10 @@ async function sendMessage() {
       result =
         await response.json();
     } catch {
-      result =
-        {
-          error:
-            await response.text()
-        };
+      result = {
+        error:
+          await response.text()
+      };
     }
     if (!response.ok) {
       throw new Error(
@@ -1587,10 +1640,9 @@ function isProbablyAudioFile(file) {
 async function handleMusicUpload(
   event
 ) {
-  const files =
-    [
-      ...(event.target.files || [])
-    ];
+  const files = [
+    ...(event.target.files || [])
+  ];
   if (!files.length) {
     return;
   }
@@ -1650,18 +1702,12 @@ async function renderTracks() {
     return;
   }
   /*
-    Перед новой отрисовкой останавливаем старое
-    проигрывание, но сами файлы НЕ удаляем.
+    При перерисовке полностью
+    останавливаем музыку.
   */
-  if (currentAudio) {
-    currentAudio.pause();
-  }
-  currentAudio =
-    null;
-  currentTrackId =
-    null;
-  currentTrackIndex =
-    -1;
+  stopCurrentTrack();
+  currentTracks =
+    [];
   container.innerHTML =
     "";
   let tracks = [];
@@ -1733,24 +1779,33 @@ async function renderTracks() {
       audio.dataset.trackId =
         track.id;
       const url =
-        getTrackURL(
-          track
-        );
+        getTrackURL(track);
       if (url) {
         audio.src =
           url;
       }
       /*
-        Нажали Play на этом треке:
-        все остальные аудио автоматически
+        =================================================
+        КЛЮЧЕВОЙ FIX
+        =================================================
+        Нажат Play на любом треке —
+        ВСЕ остальные audio немедленно
         останавливаются.
       */
-      audio.addEventListener(
-        "play",
-        async () => {
-          pauseAllTrackAudios(
+      const activateAudio =
+        () => {
+          /*
+            Сначала останавливаем вообще
+            все остальные проигрыватели.
+          */
+          stopAllOtherAudios(
             audio
           );
+          /*
+            Запоминаем именно этот
+            проигрыватель как единственный
+            активный.
+          */
           currentAudio =
             audio;
           currentTrackId =
@@ -1758,25 +1813,78 @@ async function renderTracks() {
           currentTrackIndex =
             index;
           updateTrackVisualState();
+          /*
+            Дополнительная проверка
+            после текущего event loop.
+          */
+          setTimeout(() => {
+            if (
+              currentAudio ===
+              audio
+            ) {
+              enforceSingleAudio(
+                audio
+              );
+            }
+          }, 0);
+        };
+      /*
+        play срабатывает, когда пользователь
+        нажимает штатную кнопку Play.
+      */
+      audio.addEventListener(
+        "play",
+        activateAudio
+      );
+      /*
+        playing — дополнительная страховка.
+        Именно здесь браузер уже реально
+        начал воспроизведение.
+      */
+      audio.addEventListener(
+        "playing",
+        () => {
+          activateAudio();
+        }
+      );
+      /*
+        Если этот трек поставили на паузу,
+        но он был текущим — снимаем
+        визуальный статус проигрывания.
+      */
+      audio.addEventListener(
+        "pause",
+        () => {
+          if (
+            currentAudio ===
+            audio
+          ) {
+            updateTrackVisualState();
+          }
         }
       );
       /*
         Трек закончился —
-        запускаем следующий.
+        автоматически включаем следующий.
       */
       audio.addEventListener(
         "ended",
         async () => {
-          /*
-            Проверяем, что именно этот трек
-            сейчас является активным.
-          */
           if (
-            currentTrackId !==
-            track.id
+            currentAudio !==
+            audio
           ) {
             return;
           }
+          /*
+            Старый проигрыватель
+            больше не считается активным.
+          */
+          currentAudio =
+            null;
+          currentTrackId =
+            null;
+          updateTrackVisualState();
           await playNextTrack(
             index
           );
@@ -1855,6 +1963,11 @@ async function renderTracks() {
 window.addEventListener(
   "beforeunload",
   () => {
+    /*
+      Перед уходом со страницы
+      останавливаем музыку.
+    */
+    stopAllOtherAudios();
     trackObjectURLs.forEach(
       url => {
         URL.revokeObjectURL(
