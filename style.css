@@ -1,4 +1,5 @@
-* {
+
+  * {
   box-sizing: border-box;
 }
 
@@ -110,11 +111,11 @@ button {
 
   z-index: 2;
 
-  width: min(400px, 88%);
+  width: min(430px, 90%);
 
   text-align: center;
 
-  padding: 35px;
+  padding: 40px 32px;
 
   border:
     1px solid
@@ -134,7 +135,7 @@ button {
 
 .welcome-logo {
   font-size:
-    clamp(55px, 15vw, 82px);
+    clamp(64px, 18vw, 90px);
 
   font-weight: 850;
 
@@ -162,14 +163,14 @@ button {
 }
 
 .welcome-subtitle {
-  margin: 3px 0 30px;
+  margin: 5px 0 32px;
 
   color:
-    rgba(255, 218, 242, 0.68);
+    rgba(255, 218, 242, 0.72);
 
-  font-size: 15px;
+  font-size: 16px;
 
-  letter-spacing: 0.6px;
+  letter-spacing: 0.7px;
 }
 
 .welcome-buttons {
@@ -177,15 +178,15 @@ button {
 
   flex-direction: column;
 
-  gap: 10px;
+  gap: 11px;
 }
 
 .welcome-secondary-button {
   width: 100%;
 
-  min-height: 52px;
+  min-height: 56px;
 
-  border-radius: 14px;
+  border-radius: 15px;
 
   border:
     1px solid
@@ -252,7 +253,7 @@ button {
 
   z-index: 20;
 
-  height: 68px;
+  height: 70px;
 
   padding: 0 20px;
 
@@ -272,11 +273,11 @@ button {
 }
 
 .brand {
-  font-size: 24px;
+  font-size: 25px;
 
   font-weight: 800;
 
-  letter-spacing: -0.8px;
+  letter-spacing: -0.9px;
 }
 
 .topbar-right {
@@ -284,7 +285,7 @@ button {
 
   align-items: center;
 
-  gap: 9px;
+  gap: 10px;
 }
 
 
@@ -293,8 +294,8 @@ button {
    ===================================================== */
 
 .user-avatar-button {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
 
   padding: 0;
 
@@ -325,8 +326,8 @@ button {
 #defaultUserAvatar {
   position: relative;
 
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
 
   display: block;
 
@@ -373,8 +374,8 @@ button {
 }
 
 .more-button {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
 
   border: 0;
 
@@ -397,19 +398,17 @@ button {
 
   padding:
     30px 20px
-    105px;
+    110px;
 }
 
 .section-heading {
-  margin-bottom: 16px;
+  margin-bottom: 17px;
 }
 
 .section-heading h2 {
   margin: 0;
 
   font-size: 21px;
-
-  font-weight: 700;
 }
 
 
@@ -420,7 +419,7 @@ button {
 .recent-chats {
   display: flex;
 
-  gap: 16px;
+  gap: 17px;
 
   overflow-x: auto;
 
@@ -434,7 +433,7 @@ button {
 }
 
 .recent-card {
-  flex: 0 0 90px;
+  flex: 0 0 92px;
 
   border: 0;
 
@@ -448,8 +447,8 @@ button {
 }
 
 .recent-card img {
-  width: 78px;
-  height: 78px;
+  width: 82px;
+  height: 82px;
 
   border-radius: 50%;
 
@@ -497,7 +496,7 @@ button {
   display: grid;
 
   grid-template-columns:
-    repeat(auto-fill, minmax(155px, 1fr));
+    repeat(auto-fill, minmax(160px, 1fr));
 
   gap: 22px;
 }
@@ -572,7 +571,7 @@ button {
 }
 
 .empty-plus {
-  font-size: 46px;
+  font-size: 48px;
 
   color: #c9b5c5;
 }
@@ -582,7 +581,7 @@ button {
 
   border-radius: 12px;
 
-  padding: 11px 16px;
+  padding: 12px 17px;
 
   background: #19151c;
 
@@ -616,7 +615,7 @@ button {
 .page-heading h1 {
   margin: 0;
 
-  font-size: 25px;
+  font-size: 26px;
 }
 
 .page-heading p {
@@ -628,8 +627,8 @@ button {
 }
 
 .back-button {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
 
   flex: 0 0 auto;
 
@@ -641,7 +640,7 @@ button {
 
   color: white;
 
-  font-size: 22px;
+  font-size: 23px;
 }
 
 .create-form {
@@ -653,7 +652,7 @@ button {
 
   flex-direction: column;
 
-  gap: 19px;
+  gap: 20px;
 }
 
 .create-form label,
@@ -675,7 +674,7 @@ button {
 .profile-card input {
   width: 100%;
 
-  padding: 13px;
+  padding: 14px;
 
   outline: none;
 
@@ -692,7 +691,7 @@ button {
 }
 
 .create-form textarea {
-  min-height: 105px;
+  min-height: 110px;
 
   resize: vertical;
 }
@@ -719,12 +718,12 @@ button {
 
   color: #77737e;
 
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .character-avatar-picker {
-  width: 130px !important;
-  height: 130px;
+  width: 135px !important;
+  height: 135px;
 
   display: flex !important;
 
@@ -740,7 +739,7 @@ button {
 
   color: white;
 
-  font-size: 38px;
+  font-size: 40px;
 
   cursor: pointer;
 
@@ -756,7 +755,7 @@ button {
 }
 
 .primary-button {
-  min-height: 52px;
+  min-height: 54px;
 
   border: 0;
 
@@ -794,7 +793,7 @@ button {
    ===================================================== */
 
 .music-actions {
-  margin-bottom: 21px;
+  margin-bottom: 22px;
 }
 
 .music-upload-button {
@@ -804,9 +803,9 @@ button {
 
   justify-content: center;
 
-  min-height: 48px;
+  min-height: 50px;
 
-  padding: 0 17px;
+  padding: 0 18px;
 
   border-radius: 13px;
 
@@ -814,7 +813,7 @@ button {
 
   color: white;
 
-  font-size: 15px;
+  font-size: 16px;
 
   cursor: pointer;
 
@@ -831,7 +830,7 @@ button {
 
   flex-direction: column;
 
-  gap: 9px;
+  gap: 10px;
 }
 
 .track-item {
@@ -841,7 +840,7 @@ button {
 
   gap: 13px;
 
-  padding: 13px;
+  padding: 14px;
 
   border-radius: 14px;
 
@@ -849,8 +848,8 @@ button {
 }
 
 .track-icon {
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
 
   flex: 0 0 auto;
 
@@ -865,7 +864,7 @@ button {
 
   color: #ff9bd8;
 
-  font-size: 20px;
+  font-size: 21px;
 }
 
 .track-info {
@@ -889,12 +888,12 @@ button {
 .track-audio {
   width: 100%;
 
-  max-width: 230px;
+  max-width: 250px;
 }
 
 .track-delete {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
 
   flex: 0 0 auto;
 
@@ -935,12 +934,12 @@ button {
 
   flex-direction: column;
 
-  gap: 19px;
+  gap: 20px;
 }
 
 .profile-avatar {
-  width: 110px !important;
-  height: 110px;
+  width: 120px !important;
+  height: 120px;
 
   margin: 0 auto 12px;
 
@@ -957,7 +956,7 @@ button {
 
   color: #aaa;
 
-  font-size: 32px;
+  font-size: 34px;
 
   cursor: pointer;
 
@@ -1043,10 +1042,10 @@ button {
 .chat-character img {
   display: block;
 
-  width: 43px;
-  height: 43px;
+  width: 45px;
+  height: 45px;
 
-  flex: 0 0 43px;
+  flex: 0 0 45px;
 
   border-radius: 50%;
 
@@ -1072,7 +1071,7 @@ button {
 
   text-overflow: ellipsis;
 
-  font-size: 16px;
+  font-size: 17px;
 }
 
 
@@ -1112,7 +1111,7 @@ button {
     min(720px, 82%);
 
   padding:
-    12px 15px;
+    13px 16px;
 
   border-radius: 16px;
 
@@ -1222,7 +1221,7 @@ button {
   display: block;
 
   min-width: 0;
-  min-height: 48px;
+  min-height: 49px;
 
   max-height: 150px;
 
@@ -1230,7 +1229,7 @@ button {
 
   resize: none;
 
-  padding: 12px 13px;
+  padding: 13px;
 
   outline: none;
 
@@ -1261,10 +1260,10 @@ button {
 
   z-index: 44;
 
-  width: 48px;
-  height: 48px;
+  width: 49px;
+  height: 49px;
 
-  flex: 0 0 48px;
+  flex: 0 0 49px;
 
   display: flex;
 
@@ -1279,7 +1278,7 @@ button {
 
   color: #151016;
 
-  font-size: 21px;
+  font-size: 22px;
 
   pointer-events: auto;
 
@@ -1328,7 +1327,7 @@ body:has(.chat-page:not(.hidden)) .bottom-nav {
   right: 0;
   bottom: 0;
 
-  height: 74px;
+  height: 78px;
 
   display: flex;
 
@@ -1337,7 +1336,7 @@ body:has(.chat-page:not(.hidden)) .bottom-nav {
   justify-content: center;
 
   gap:
-    clamp(38px, 10vw, 80px);
+    clamp(42px, 11vw, 85px);
 
   background:
     rgba(8, 7, 12, 0.92);
@@ -1384,18 +1383,20 @@ body:has(.chat-page:not(.hidden)) .bottom-nav {
 }
 
 .nav-button span {
-  font-size: 23px;
+  font-size: 26px;
 }
 
 .nav-button small,
 .create-nav small {
-  font-size: 13px;
+  font-size: 15px;
+
+  font-weight: 500;
 }
 
 .create-nav {
   color: white;
 
-  font-size: 32px;
+  font-size: 36px;
 
   margin-top: -11px;
 }
@@ -1437,18 +1438,52 @@ body:has(.chat-page:not(.hidden)) .bottom-nav {
 
   .page {
     padding:
-      22px 15px 100px;
+      23px 15px 105px;
+  }
+
+  .topbar {
+    height: 68px;
+
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+
+  .brand {
+    font-size: 25px;
+  }
+
+  .user-avatar-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .more-button {
+    width: 44px;
+    height: 44px;
   }
 
   .section-heading h2 {
-    font-size: 20px;
+    font-size: 21px;
+  }
+
+  .recent-card {
+    flex-basis: 94px;
+  }
+
+  .recent-card img {
+    width: 82px;
+    height: 82px;
+  }
+
+  .recent-card span {
+    font-size: 14px;
   }
 
   .characters-grid {
     grid-template-columns:
       repeat(3, 1fr);
 
-    gap: 16px;
+    gap: 17px;
   }
 
   .character-card-name {
@@ -1460,20 +1495,59 @@ body:has(.chat-page:not(.hidden)) .bottom-nav {
   }
 
   .welcome-content {
+    width: min(430px, 90%);
+
     padding:
-      29px 21px;
+      31px 22px;
   }
 
   .welcome-logo {
+    font-size:
+      clamp(66px, 20vw, 88px);
+
     letter-spacing: -4px;
   }
 
   .welcome-subtitle {
-    font-size: 15px;
+    font-size: 16px;
   }
 
   .welcome-secondary-button {
-    min-height: 52px;
+    min-height: 55px;
+
+    font-size: 16px;
+  }
+
+  .page-heading h1 {
+    font-size: 25px;
+  }
+
+  .create-form label,
+  .profile-card label {
+    font-size: 15px;
+  }
+
+  .create-form input,
+  .create-form textarea,
+  .create-form select,
+  .profile-card input {
+    font-size: 16px;
+
+    padding: 14px;
+  }
+
+  .character-avatar-picker {
+    width: 135px !important;
+    height: 135px;
+  }
+
+  .profile-avatar {
+    width: 120px !important;
+    height: 120px;
+  }
+
+  .music-upload-button {
+    min-height: 50px;
 
     font-size: 16px;
   }
@@ -1498,16 +1572,20 @@ body:has(.chat-page:not(.hidden)) .bottom-nav {
   }
 
   .chat-header {
-    flex-basis: 62px;
+    flex-basis: 64px;
 
-    height: 62px;
+    height: 64px;
   }
 
   .chat-character img {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
 
-    flex-basis: 40px;
+    flex-basis: 42px;
+  }
+
+  #chatName {
+    font-size: 17px;
   }
 
   .chat-input-area {
@@ -1515,24 +1593,40 @@ body:has(.chat-page:not(.hidden)) .bottom-nav {
     padding-right: 10px;
   }
 
+  .chat-input-area textarea {
+    font-size: 16px;
+
+    min-height: 49px;
+  }
+
+  .send-button {
+    width: 49px;
+    height: 49px;
+
+    flex-basis: 49px;
+  }
+
   #defaultUserAvatar {
-    width: 23px;
-    height: 23px;
+    width: 27px;
+    height: 27px;
   }
 
   .bottom-nav {
-    height: 72px;
+    height: 78px;
   }
 
   .nav-button span {
-    font-size: 22px;
+    font-size: 27px;
   }
 
   .nav-button small,
   .create-nav small {
-    font-size: 12px;
+    font-size: 15px;
   }
 
+  .create-nav {
+    font-size: 37px;
+  }
 }
 
 
