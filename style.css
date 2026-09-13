@@ -11,6 +11,8 @@
 
   background: #08070c;
   color: #f7f5f8;
+
+  font-size: 16px;
 }
 
 html,
@@ -22,6 +24,7 @@ body {
 
 body {
   overflow-x: hidden;
+  font-size: 16px;
 }
 
 button,
@@ -164,7 +167,7 @@ button {
   color:
     rgba(255, 218, 242, 0.68);
 
-  font-size: 14px;
+  font-size: 15px;
 
   letter-spacing: 0.6px;
 }
@@ -180,7 +183,7 @@ button {
 .welcome-secondary-button {
   width: 100%;
 
-  min-height: 50px;
+  min-height: 52px;
 
   border-radius: 14px;
 
@@ -193,6 +196,7 @@ button {
 
   color: #ffffff;
 
+  font-size: 16px;
   font-weight: 600;
 
   transition:
@@ -248,7 +252,7 @@ button {
 
   z-index: 20;
 
-  height: 66px;
+  height: 68px;
 
   padding: 0 20px;
 
@@ -268,7 +272,7 @@ button {
 }
 
 .brand {
-  font-size: 22px;
+  font-size: 24px;
 
   font-weight: 800;
 
@@ -280,17 +284,17 @@ button {
 
   align-items: center;
 
-  gap: 8px;
+  gap: 9px;
 }
 
 
 /* =====================================================
-   USER AVATAR — ЦВЕТОК-КОНТУР
+   USER AVATAR
    ===================================================== */
 
 .user-avatar-button {
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
 
   padding: 0;
 
@@ -321,8 +325,8 @@ button {
 #defaultUserAvatar {
   position: relative;
 
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
 
   display: block;
 
@@ -369,8 +373,8 @@ button {
 }
 
 .more-button {
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
 
   border: 0;
 
@@ -378,7 +382,7 @@ button {
 
   color: #92909a;
 
-  font-size: 19px;
+  font-size: 21px;
 }
 
 
@@ -392,18 +396,20 @@ button {
   margin: 0 auto;
 
   padding:
-    28px 20px
-    100px;
+    30px 20px
+    105px;
 }
 
 .section-heading {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .section-heading h2 {
   margin: 0;
 
-  font-size: 18px;
+  font-size: 21px;
+
+  font-weight: 700;
 }
 
 
@@ -414,11 +420,11 @@ button {
 .recent-chats {
   display: flex;
 
-  gap: 14px;
+  gap: 16px;
 
   overflow-x: auto;
 
-  padding-bottom: 24px;
+  padding-bottom: 25px;
 
   scrollbar-width: none;
 }
@@ -428,7 +434,7 @@ button {
 }
 
 .recent-card {
-  flex: 0 0 82px;
+  flex: 0 0 90px;
 
   border: 0;
 
@@ -442,8 +448,8 @@ button {
 }
 
 .recent-card img {
-  width: 72px;
-  height: 72px;
+  width: 78px;
+  height: 78px;
 
   border-radius: 50%;
 
@@ -459,9 +465,9 @@ button {
 .recent-card span {
   display: block;
 
-  margin-top: 6px;
+  margin-top: 7px;
 
-  font-size: 12px;
+  font-size: 14px;
 
   overflow: hidden;
 
@@ -473,7 +479,7 @@ button {
 .empty-recent {
   color: #5f5a64;
 
-  font-size: 13px;
+  font-size: 14px;
 
   padding: 8px 0;
 }
@@ -484,16 +490,16 @@ button {
    ===================================================== */
 
 .characters-section {
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .characters-grid {
   display: grid;
 
   grid-template-columns:
-    repeat(auto-fill, minmax(145px, 1fr));
+    repeat(auto-fill, minmax(155px, 1fr));
 
-  gap: 20px;
+  gap: 22px;
 }
 
 .character-card {
@@ -534,17 +540,19 @@ button {
 }
 
 .character-card-name {
-  margin-top: 9px;
+  margin-top: 10px;
+
+  font-size: 15px;
 
   font-weight: 650;
 }
 
 .character-card-description {
-  margin-top: 3px;
+  margin-top: 4px;
 
   color: #77737e;
 
-  font-size: 13px;
+  font-size: 14px;
 
   overflow: hidden;
 
@@ -554,15 +562,17 @@ button {
 }
 
 .empty-state {
-  padding: 55px 20px;
+  padding: 58px 20px;
 
   text-align: center;
 
   color: #77737e;
+
+  font-size: 15px;
 }
 
 .empty-plus {
-  font-size: 42px;
+  font-size: 46px;
 
   color: #c9b5c5;
 }
@@ -570,13 +580,15 @@ button {
 .small-button {
   border: 0;
 
-  border-radius: 11px;
+  border-radius: 12px;
 
-  padding: 10px 15px;
+  padding: 11px 16px;
 
   background: #19151c;
 
   color: white;
+
+  font-size: 15px;
 
   transition:
     background 0.18s ease;
@@ -596,38 +608,40 @@ button {
 
   align-items: center;
 
-  gap: 13px;
+  gap: 14px;
 
-  margin-bottom: 28px;
+  margin-bottom: 30px;
 }
 
 .page-heading h1 {
   margin: 0;
 
-  font-size: 23px;
+  font-size: 25px;
 }
 
 .page-heading p {
-  margin: 4px 0 0;
+  margin: 5px 0 0;
 
   color: #77737e;
+
+  font-size: 15px;
 }
 
 .back-button {
-  width: 39px;
-  height: 39px;
+  width: 42px;
+  height: 42px;
 
   flex: 0 0 auto;
 
   border: 0;
 
-  border-radius: 11px;
+  border-radius: 12px;
 
   background: #17131a;
 
   color: white;
 
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .create-form {
@@ -639,7 +653,7 @@ button {
 
   flex-direction: column;
 
-  gap: 18px;
+  gap: 19px;
 }
 
 .create-form label,
@@ -648,11 +662,11 @@ button {
 
   flex-direction: column;
 
-  gap: 7px;
+  gap: 8px;
 
   color: #c7c2ca;
 
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .create-form input,
@@ -661,22 +675,24 @@ button {
 .profile-card input {
   width: 100%;
 
-  padding: 12px;
+  padding: 13px;
 
   outline: none;
 
   border:
     1px solid #28232c;
 
-  border-radius: 12px;
+  border-radius: 13px;
 
   background: #110f14;
 
   color: white;
+
+  font-size: 16px;
 }
 
 .create-form textarea {
-  min-height: 100px;
+  min-height: 105px;
 
   resize: vertical;
 }
@@ -699,14 +715,16 @@ button {
 
   flex-direction: column;
 
-  gap: 8px;
+  gap: 9px;
 
   color: #77737e;
+
+  font-size: 14px;
 }
 
 .character-avatar-picker {
-  width: 125px !important;
-  height: 125px;
+  width: 130px !important;
+  height: 130px;
 
   display: flex !important;
 
@@ -722,7 +740,7 @@ button {
 
   color: white;
 
-  font-size: 35px;
+  font-size: 38px;
 
   cursor: pointer;
 
@@ -738,11 +756,11 @@ button {
 }
 
 .primary-button {
-  min-height: 49px;
+  min-height: 52px;
 
   border: 0;
 
-  border-radius: 13px;
+  border-radius: 14px;
 
   background:
     linear-gradient(
@@ -752,6 +770,8 @@ button {
     );
 
   color: #181017;
+
+  font-size: 16px;
 
   font-weight: 650;
 
@@ -774,7 +794,7 @@ button {
    ===================================================== */
 
 .music-actions {
-  margin-bottom: 20px;
+  margin-bottom: 21px;
 }
 
 .music-upload-button {
@@ -784,15 +804,17 @@ button {
 
   justify-content: center;
 
-  min-height: 45px;
+  min-height: 48px;
 
-  padding: 0 16px;
+  padding: 0 17px;
 
-  border-radius: 12px;
+  border-radius: 13px;
 
   background: #19151c;
 
   color: white;
+
+  font-size: 15px;
 
   cursor: pointer;
 
@@ -809,7 +831,7 @@ button {
 
   flex-direction: column;
 
-  gap: 8px;
+  gap: 9px;
 }
 
 .track-item {
@@ -817,18 +839,18 @@ button {
 
   align-items: center;
 
-  gap: 12px;
+  gap: 13px;
 
-  padding: 12px;
+  padding: 13px;
 
-  border-radius: 13px;
+  border-radius: 14px;
 
   background: #110f14;
 }
 
 .track-icon {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
 
   flex: 0 0 auto;
 
@@ -837,13 +859,13 @@ button {
   align-items: center;
   justify-content: center;
 
-  border-radius: 10px;
+  border-radius: 11px;
 
   background: #1d1720;
 
   color: #ff9bd8;
 
-  font-size: 19px;
+  font-size: 20px;
 }
 
 .track-info {
@@ -860,6 +882,8 @@ button {
   text-overflow: ellipsis;
 
   margin-bottom: 6px;
+
+  font-size: 15px;
 }
 
 .track-audio {
@@ -869,8 +893,8 @@ button {
 }
 
 .track-delete {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
 
   flex: 0 0 auto;
 
@@ -882,7 +906,7 @@ button {
 
   color: #9b8495;
 
-  font-size: 22px;
+  font-size: 23px;
 
   line-height: 1;
 
@@ -911,12 +935,12 @@ button {
 
   flex-direction: column;
 
-  gap: 18px;
+  gap: 19px;
 }
 
 .profile-avatar {
-  width: 105px !important;
-  height: 105px;
+  width: 110px !important;
+  height: 110px;
 
   margin: 0 auto 12px;
 
@@ -933,7 +957,7 @@ button {
 
   color: #aaa;
 
-  font-size: 30px;
+  font-size: 32px;
 
   cursor: pointer;
 
@@ -983,7 +1007,7 @@ button {
 
   z-index: 42;
 
-  flex: 0 0 66px;
+  flex: 0 0 68px;
 
   width: 100%;
 
@@ -991,7 +1015,7 @@ button {
 
   align-items: center;
 
-  gap: 11px;
+  gap: 12px;
 
   padding: 0 14px;
 
@@ -1013,16 +1037,16 @@ button {
 
   align-items: center;
 
-  gap: 10px;
+  gap: 11px;
 }
 
 .chat-character img {
   display: block;
 
-  width: 41px;
-  height: 41px;
+  width: 43px;
+  height: 43px;
 
-  flex: 0 0 41px;
+  flex: 0 0 43px;
 
   border-radius: 50%;
 
@@ -1047,6 +1071,8 @@ button {
   white-space: nowrap;
 
   text-overflow: ellipsis;
+
+  font-size: 16px;
 }
 
 
@@ -1076,7 +1102,7 @@ button {
 
   flex-direction: column;
 
-  gap: 10px;
+  gap: 11px;
 
   -webkit-overflow-scrolling: touch;
 }
@@ -1086,11 +1112,13 @@ button {
     min(720px, 82%);
 
   padding:
-    11px 14px;
+    12px 15px;
 
-  border-radius: 15px;
+  border-radius: 16px;
 
-  line-height: 1.45;
+  line-height: 1.5;
+
+  font-size: 16px;
 
   white-space: pre-wrap;
 
@@ -1120,7 +1148,7 @@ button {
 
 
 /* =====================================================
-   НЕОНОВЫЙ ЦВЕТОК НА СООБЩЕНИЯХ БОТА
+   НЕОНОВЫЙ ЦВЕТОК
    ===================================================== */
 
 .message.bot::before {
@@ -1174,10 +1202,10 @@ button {
 
   align-items: flex-end;
 
-  gap: 8px;
+  gap: 9px;
 
   padding:
-    10px 14px
+    11px 14px
     max(15px, env(safe-area-inset-bottom));
 
   background:
@@ -1194,7 +1222,7 @@ button {
   display: block;
 
   min-width: 0;
-  min-height: 46px;
+  min-height: 48px;
 
   max-height: 150px;
 
@@ -1202,18 +1230,20 @@ button {
 
   resize: none;
 
-  padding: 12px;
+  padding: 12px 13px;
 
   outline: none;
 
   border:
     1px solid #28232c;
 
-  border-radius: 13px;
+  border-radius: 14px;
 
   background: #110f14;
 
   color: white;
+
+  font-size: 16px;
 
   pointer-events: auto;
 
@@ -1231,10 +1261,10 @@ button {
 
   z-index: 44;
 
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
 
-  flex: 0 0 46px;
+  flex: 0 0 48px;
 
   display: flex;
 
@@ -1243,13 +1273,13 @@ button {
 
   border: 0;
 
-  border-radius: 13px;
+  border-radius: 14px;
 
   background: #fff;
 
   color: #151016;
 
-  font-size: 20px;
+  font-size: 21px;
 
   pointer-events: auto;
 
@@ -1298,7 +1328,7 @@ body:has(.chat-page:not(.hidden)) .bottom-nav {
   right: 0;
   bottom: 0;
 
-  height: 70px;
+  height: 74px;
 
   display: flex;
 
@@ -1307,7 +1337,7 @@ body:has(.chat-page:not(.hidden)) .bottom-nav {
   justify-content: center;
 
   gap:
-    clamp(35px, 10vw, 80px);
+    clamp(38px, 10vw, 80px);
 
   background:
     rgba(8, 7, 12, 0.92);
@@ -1335,7 +1365,7 @@ body:has(.chat-page:not(.hidden)) .bottom-nav {
 
   align-items: center;
 
-  gap: 3px;
+  gap: 4px;
 
   transition:
     color 0.18s ease,
@@ -1354,20 +1384,20 @@ body:has(.chat-page:not(.hidden)) .bottom-nav {
 }
 
 .nav-button span {
-  font-size: 20px;
+  font-size: 23px;
 }
 
 .nav-button small,
 .create-nav small {
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .create-nav {
   color: white;
 
-  font-size: 29px;
+  font-size: 32px;
 
-  margin-top: -10px;
+  margin-top: -11px;
 }
 
 
@@ -1407,31 +1437,45 @@ body:has(.chat-page:not(.hidden)) .bottom-nav {
 
   .page {
     padding:
-      20px 14px 95px;
+      22px 15px 100px;
+  }
+
+  .section-heading h2 {
+    font-size: 20px;
   }
 
   .characters-grid {
     grid-template-columns:
       repeat(3, 1fr);
 
-    gap: 15px;
+    gap: 16px;
   }
 
   .character-card-name {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .character-card-description {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .welcome-content {
     padding:
-      27px 20px;
+      29px 21px;
   }
 
   .welcome-logo {
     letter-spacing: -4px;
+  }
+
+  .welcome-subtitle {
+    font-size: 15px;
+  }
+
+  .welcome-secondary-button {
+    min-height: 52px;
+
+    font-size: 16px;
   }
 
   .track-item {
@@ -1444,24 +1488,26 @@ body:has(.chat-page:not(.hidden)) .bottom-nav {
 
   .message {
     max-width: 88%;
+
+    font-size: 16px;
   }
 
   .chat-messages {
     padding:
-      14px 12px;
+      15px 12px;
   }
 
   .chat-header {
-    flex-basis: 60px;
+    flex-basis: 62px;
 
-    height: 60px;
+    height: 62px;
   }
 
   .chat-character img {
-    width: 39px;
-    height: 39px;
+    width: 40px;
+    height: 40px;
 
-    flex-basis: 39px;
+    flex-basis: 40px;
   }
 
   .chat-input-area {
@@ -1470,8 +1516,21 @@ body:has(.chat-page:not(.hidden)) .bottom-nav {
   }
 
   #defaultUserAvatar {
-    width: 22px;
-    height: 22px;
+    width: 23px;
+    height: 23px;
+  }
+
+  .bottom-nav {
+    height: 72px;
+  }
+
+  .nav-button span {
+    font-size: 22px;
+  }
+
+  .nav-button small,
+  .create-nav small {
+    font-size: 12px;
   }
 
 }
