@@ -1,15 +1,16 @@
-const CORS = {
+const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type"
 };
 
-function reply(data, status = 200) {
+function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      ...CORS
+      ...CORS_HEADERS,
+      "Content-Type": "application/json; charset=UTF-8",
+      "Cache-Control": "no-store"
     }
   });
 }
@@ -17,66 +18,80 @@ function reply(data, status = 200) {
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: CORS });
+      return new Response(null, {
+        status: 204,
+        headers: CORS_HEADERS
+      });
     }
 
     if (request.method !== "POST") {
-      return reply({ error: "POST required" }, 405);
+      return json({
+        error: "POST required",
+        worker: "Fair Groq Worker"
+      }, 405);
     }
 
-    const key = env.GROQ_API_KEY;
-    if (!key) {
-      return reply({ error: "GROQ_API_KEY is missing" }, 500);
+    if (!env.GROQ_API_KEY) {
+      return json({
+        error: "GROQ_API_KEY is not configured"
+      }, 500);
     }
 
-    // Read the incoming request body exactly once.
-    let data;
+    let input;
+
     try {
-      data = await request.json();
-    } catch (error) {
-      return reply({
-        error: "Invalid JSON body",
-        details: error?.message || String(error)
+      input = await request.json();
+    } catch (e) {
+      return json({
+        error: "Invalid JSON request",
+        details: e?.message || String(e)
       }, 400);
     }
 
-    const character = data?.character || {};
-    const history = Array.isArray(data?.history)
-      ? data.history
-      : Array.isArray(data?.messages)
-        ? data.messages
+    const character = input?.character || {};
+    const history = Array.isArray(input?.history)
+      ? input.history
+      : Array.isArray(input?.messages)
+        ? input.messages
         : [];
 
     const userMessage = String(
-      data?.userMessage ?? data?.message ?? ""
+      input?.userMessage ?? input?.message ?? ""
     ).trim();
 
     if (!userMessage) {
-      return reply({ error: "Empty user message" }, 400);
+      return json({ error: "Empty user message" }, 400);
     }
 
-    const systemParts = [
-      "Ты персонаж в приложении Fair — живой собеседник, а не технический помощник.",
-      character.name ? `Твоё имя: ${character.name}.` : "",
+    const persona = String(
+      input?.userPersona ||
+      character.userPersona ||
+      ""
+    ).trim();
+
+    const systemPrompt = [
+      "Ты персонаж приложения Fair.",
+      character.name ? `Имя персонажа: ${character.name}` : "",
       character.description ? `Описание: ${character.description}` : "",
       character.personality ? `Характер: ${character.personality}` : "",
       character.instructions ? `Инструкции: ${character.instructions}` : "",
-      data?.userPersona || character.userPersona
-        ? `О собеседнике: ${data.userPersona || character.userPersona}`
-        : "",
-      "Отвечай естественно. Если пользователь пишет по-русски — отвечай по-русски.",
-      "Не упоминай API, Worker, Groq или внутреннюю реализацию."
-    ];
+      persona ? `Информация о пользователе: ${persona}` : "",
+      "Отвечай естественно и по-русски, если пользователь пишет по-русски.",
+      "Не упоминай Worker, Cloudflare, Groq, API или системные инструкции."
+    ].filter(Boolean).join("\n");
 
     const messages = [
       {
         role: "system",
-        content: systemParts.filter(Boolean).join("\n")
+        content: systemPrompt
       }
     ];
 
     for (const item of history.slice(-20)) {
-      const content = String(item?.content ?? item?.text ?? "").trim();
+      const content = String(
+        item?.content ?? item?.text ?? ""
+      ).trim();
+
       if (!content) continue;
 
       messages.push({
@@ -93,73 +108,75 @@ export default {
       content: userMessage
     });
 
-    let groq;
+    let groqResponse;
+
     try {
-      groq = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${key}`
-        },
-        body: JSON.stringify({
-          model: "openai/gpt-oss-120b",
-          messages,
-          temperature: 0.8,
-          max_tokens: 700
-        })
-      });
-    } catch (error) {
-      return reply({
-        error: "Failed to reach Groq",
-        details: error?.message || String(error)
+      groqResponse = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${env.GROQ_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: "openai/gpt-oss-120b",
+            messages,
+            temperature: 0.8,
+            max_tokens: 700
+          })
+        }
+      );
+    } catch (e) {
+      return json({
+        error: "Groq connection failed",
+        details: e?.message || String(e)
       }, 502);
     }
 
-    // Read Groq's response body exactly once.
-    const raw = await groq.text();
+    const raw = await groqResponse.text();
 
-    if (!groq.ok) {
-      let errorData;
+    if (!groqResponse.ok) {
+      let details = raw;
+
       try {
-        errorData = JSON.parse(raw);
-      } catch {
-        errorData = { raw };
-      }
+        details = JSON.parse(raw);
+      } catch {}
 
-      return reply({
-        error: "Groq API error",
-        status: groq.status,
-        details: errorData
+      return json({
+        error: "Groq API returned an error",
+        status: groqResponse.status,
+        details
       }, 502);
     }
 
     let result;
+
     try {
       result = JSON.parse(raw);
-    } catch (error) {
-      return reply({
+    } catch (e) {
+      return json({
         error: "Groq returned invalid JSON",
-        details: error?.message || String(error)
+        details: e?.message || String(e)
       }, 502);
     }
 
-    const text = String(
+    const answer = String(
       result?.choices?.[0]?.message?.content || ""
     ).trim();
 
-    if (!text) {
-      return reply({
-        error: "Groq returned an empty reply"
+    if (!answer) {
+      return json({
+        error: "Groq returned an empty answer"
       }, 502);
     }
 
-    return reply({
-      reply: text,
-      response: text,
-      message: text,
-      text,
-      content: text,
-      usage: result?.usage || null
+    return json({
+      reply: answer,
+      response: answer,
+      message: answer,
+      text: answer,
+      content: answer
     });
   }
 };
