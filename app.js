@@ -1417,15 +1417,15 @@ async function sendMessage() {
             )
         }
       );
-    let result =
-      null;
+    const rawResponse = await response.text();
+    let result = null;
     try {
-      result =
-        await response.json();
+      result = rawResponse
+        ? JSON.parse(rawResponse)
+        : {};
     } catch {
       result = {
-        error:
-          await response.text()
+        error: rawResponse || "Пустой ответ от Worker"
       };
     }
     if (!response.ok) {
